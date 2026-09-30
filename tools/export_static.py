@@ -30,7 +30,7 @@ BANNER = ('<div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14
           'text-align:center">Read-only demo with made-up data. Buttons do nothing here. '
           '<a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>')
 
-NOTE = ("<script>function ro(e){e.preventDefault();e.stopImmediatePropagation();"
+NOTE = ("<script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();"
         "alert('Read-only demo: buttons do not change anything here.');}"
         "document.addEventListener('submit',ro,true);"
         "document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);"

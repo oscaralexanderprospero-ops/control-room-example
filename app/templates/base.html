@@ -45,6 +45,7 @@
     <span>Passes: <strong>{{ duty.passes or '—' }}</strong> · Review: <strong>{{ duty.review or '—' }}</strong></span>
     <span>
       {% if rec.connected %}<span class="light ok"></span>Sheet synced {{ rec.pulled_at or '' }}
+      {% elif rec.source == 'demo data' %}<span class="light ok"></span>Demo data (made up)
       {% else %}<span class="light bad"></span>Not linked to the Sheet
         <form method="post" action="/act/google-connect" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>{% endif %}
       {% if rec.pending %} · {{ rec.pending }} changes waiting to send{% endif %}
