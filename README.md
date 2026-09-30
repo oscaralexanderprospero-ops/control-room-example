@@ -6,6 +6,8 @@ publishing, with AI agents doing the legwork and **you keeping the final click**
 This is a cleaned example of a real app. All shop names, posts, listings,
 addresses and keys have been replaced with made-up data ("Example Woodworks").
 
+![My day](docs/screenshots/1-my-day.png)
+
 ## What it shows
 
 - **My day**: one thing at a time, built for a focus-first brain.
