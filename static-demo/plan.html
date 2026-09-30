@@ -6,7 +6,7 @@
 </head><body data-page="plan"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script><style>#ed{display:none!important}</style>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:45 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:46 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -132,14 +132,14 @@ function omsMenu(open, remember){
 <section class="nowcard" id="now" data-tour="plan-now">
 
   <div class="src">Now</div>
-  <div class="nowtext">Draft W-01: Blog: What I learned oiling my first walnut piece</div>
-  <div><span class="tag bad">overdue</span><span class="tag warn">Writing</span></div>
+  <div class="nowtext">Look at the 2 drafts in your Inbox</div>
+  <div><span class="tag warn">Inbox</span></div>
   <div class="fixrow" style="margin-top:.8rem">
   <form method="post" action="#" style="display:inline">
-    <input type="hidden" name="key" value="a-b26e6bbd61"><input type="hidden" name="what" value="Draft W-01: Blog: What I learned oiling my first walnut piece">
+    <input type="hidden" name="key" value="a-d7d5b300db"><input type="hidden" name="what" value="Look at the 2 drafts in your Inbox">
     
       
-      <a class="btn quiet" href="/writing#W-01">Go there →</a>
+      <a class="btn quiet" href="inbox.html">Go there →</a>
       <button  name="op" value="done">✓ Done</button>
       <button class="quiet" name="op" value="later">Not now</button>
     
@@ -157,51 +157,6 @@ function omsMenu(open, remember){
 <h2 data-tour="plan-then">Then</h2>
 
 <div class="note planrow"><span class="stepno">2</span>
-  <div class="plantext"><a href="/writing#W-02">Draft W-02: Essay: Why I still make spoons by hand</a> <span class="tag bad">overdue</span><span class="tag warn">Writing</span></div>
-  <div class="planbtns">
-  <form method="post" action="#" style="display:inline">
-    <input type="hidden" name="key" value="a-0fd899cb51"><input type="hidden" name="what" value="Draft W-02: Essay: Why I still make spoons by hand">
-    
-      
-      <button class="quiet" name="op" value="now">Do this now</button>
-      <button class="quiet" name="op" value="done">✓ Done</button>
-      
-    
-  </form>
-</div></div>
-
-<div class="note planrow"><span class="stepno">3</span>
-  <div class="plantext"><a href="/writing#P-1">Question P-1: Do you oil the inside of a spoon bowl, or leave it raw?</a> <span class="tag bad">overdue</span><span class="tag warn">Writing</span></div>
-  <div class="planbtns">
-  <form method="post" action="#" style="display:inline">
-    <input type="hidden" name="key" value="a-74be7698fe"><input type="hidden" name="what" value="Question P-1: Do you oil the inside of a spoon bowl, or leave it raw?">
-    
-      
-      <button class="quiet" name="op" value="now">Do this now</button>
-      <button class="quiet" name="op" value="done">✓ Done</button>
-      
-    
-  </form>
-</div></div>
-
-<div class="note planrow"><span class="stepno">4</span>
-  <div class="plantext"><a href="inbox.html">Look at the 2 drafts in your Inbox</a> <span class="tag warn">Inbox</span></div>
-  <div class="planbtns">
-  <form method="post" action="#" style="display:inline">
-    <input type="hidden" name="key" value="a-d7d5b300db"><input type="hidden" name="what" value="Look at the 2 drafts in your Inbox">
-    
-      
-      <button class="quiet" name="op" value="now">Do this now</button>
-      <button class="quiet" name="op" value="done">✓ Done</button>
-      
-    
-  </form>
-</div></div>
-
-
-<details class="planmore"><summary>Show the other 1 (you don't need these yet)</summary>
-
-<div class="note planrow"><span class="stepno">5</span>
   <div class="plantext"><a href="blocked.html">Blocked on you: 2 things waiting. Clear whatever you can</a> <span class="tag warn">Blocked</span></div>
   <div class="planbtns">
   <form method="post" action="#" style="display:inline">
@@ -215,7 +170,6 @@ function omsMenu(open, remember){
   </form>
 </div></div>
 
-</details>
 
 
 

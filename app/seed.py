@@ -118,11 +118,11 @@ INBOX_DRAFTS = {
 # ---------------------------------------------------------------- Writing
 # (ID, Kind, Item, Owner, Due, Status, His words, Source, As of)
 WRITING = [
-    ["W-01", "draft", "Blog: What I learned oiling my first walnut piece", "Claude", "2026-01-20",
+    ["W-01", "draft", "Blog: What I learned oiling my first walnut piece", "Claude", "2026-10-07",
      "waiting", "", "Built from Sam's stated positions", DAY],
-    ["W-02", "draft", "Essay: Why I still make spoons by hand", "Claude", "2026-01-27",
+    ["W-02", "draft", "Essay: Why I still make spoons by hand", "Claude", "2026-10-21",
      "waiting", "", "Built from Sam's stated positions", DAY],
-    ["W-03", "draft", "Newsletter: January at the bench", "Kimi", "2026-01-31",
+    ["W-03", "draft", "Newsletter: January at the bench", "Kimi", "2026-10-30",
      "sent back", "", "Example: sent back with a reason", DAY],
     ["K-01", "capture", "Spoon carving guide / Chapter 4 / Book", "Sam", "", "staged",
      "Keep the hook knife sharper than you think you need. A dull one tears the grain and you fight it the whole way.",
@@ -130,9 +130,9 @@ WRITING = [
     ["K-02", "capture", "Blog / Oiling / Blog post", "Sam", "", "staged",
      "Walnut drinks the first coat. Wait a full day before the second one.",
      "Capture box in the Control Room", DAY],
-    ["P-1", "prompt", "Do you oil the inside of a spoon bowl, or leave it raw?", "Claude", "2026-01-22",
+    ["P-1", "prompt", "Do you oil the inside of a spoon bowl, or leave it raw?", "Claude", "2026-10-09",
      "waiting", "", "Example prompt", DAY],
-    ["P-2", "prompt", "What is the one tool a beginner should buy first?", "Claude", "2026-01-29",
+    ["P-2", "prompt", "What is the one tool a beginner should buy first?", "Claude", "2026-10-14",
      "answered 2026-01-14", "A good straight knife, before anything else.", "Example prompt", DAY],
     ["Q-W1", "queue", "What I learned oiling my first walnut piece", "Blog", "Craft", "Drafting", "", "", DAY],
     ["Q-W2", "queue", "Why I still make spoons by hand", "Substack", "Craft", "Idea", "", "", DAY],
