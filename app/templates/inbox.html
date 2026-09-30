@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block body %}
+<h1 data-tour="inbox-title">Inbox</h1>
+<p class="lead">Drafts waiting for your yes. Your own words are on the left, each platform's draft on the right. Any word <mark class="notsaid">marked like this</mark> is not in your words. <span class="extra">Grey</span> is a link, tag or the Etsy line.</p>
+{% if request.args.get('done') == 'chatgpt' %}<div class="notice">Queued for ChatGPT's next read, in the Reviews tab. <a href="/reviews">See Reviews</a></div>{% endif %}
+{% if request.args.get('done') == 'approved' %}<div class="notice">Approved and logged.</div>{% endif %}
+{% if request.args.get('done') == 'sent-back' %}<div class="notice">Sent back to {{ duty.passes }}, with your reason.</div>{% endif %}
+
+{% if items %}
+<div class="bulkbar" data-group="inbox">
+  <label><input type="checkbox" class="bulkall bulkpick-all"> Select all</label> <span class="src bulkcount"></span>
+  <button type="button" data-op="approve" data-confirm="Approve all {n} selected items, every platform?">Approve selected</button>
+  <input type="text" name="note" placeholder="Reason or note (for send back or ChatGPT)">
+  <button type="button" class="quiet" data-op="send-back">Send back selected</button>
+  <button type="button" class="quiet" data-op="chatgpt">Ask ChatGPT about selected</button>
+</div>
+{% endif %}
+{% for it in items %}
+{% set bad = it.platforms.values()|rejectattr('all_ok')|list|length %}
+<div class="card" id="{{ it.id }}">
+  <h2 style="margin-top:0"><input type="checkbox" class="bulkpick" data-group="inbox" value="{{ it.id }}" aria-label="Select {{ it.id }}">{{ it.item }}</h2>
+  {% if bad %}<div class="src" style="color:var(--rust)">✗ {{ bad }} platform{{ '' if bad == 1 else 's' }} with a failed check: read before approving.</div>{% endif %}
+  <div class="src">{{ it.id }} · drafted by {{ it.by }} · queue {{ it.queue_id or '—' }} · status {{ it.row.Status }}</div>
+  <div class="inboxgrid">
+    <div class="srcbox" data-tour="inbox-source">
+      <h3>Your words</h3>
+      <p>{{ it.source_dictation }}</p>
+      {% if it.intake_done %}{% if it.intake %}<div class="notice warn"><strong>Spoken-words check (video intake):</strong> these lines break the filming rules (no "magick", no shop or community name).
+        <ul>{% for l in it.intake %}<li>{{ l }}</li>{% endfor %}</ul>Practice words, names and addresses have no list, so give it a listen too.</div>
+        {% else %}<div class="src">✓ Spoken-words check: nothing flagged. Practice words, names and addresses have no list, so give it a listen too.</div>{% endif %}{% endif %}
+      {% if it.alt %}<div class="src">Alt text: {% for a in it.alt %}<div>{{ loop.index }}. {{ a }}</div>{% endfor %}</div>{% endif %}
+      {% if it.earned %}<div class="src">Instagram feed earned: {{ it.earned }}</div>{% endif %}
+      {% if it.files %}<div class="src">Files: {{ it.files|join(', ') }}</div>
+        {% for f in it.files %}{% set fp = f|replace('\\', '/') %}
+          {% if fp.lower().endswith(('.mp4', '.mov', '.m4v')) %}<video src="/media-file?p={{ fp|urlencode }}" preload="none" controls style="width:100%;max-height:22rem;background:#000;border-radius:6px;margin-top:.4rem"></video>
+          {% elif fp.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) %}<img src="/media-file?p={{ fp|urlencode }}" alt="{{ fp.rsplit('/', 1)[-1] }}" loading="lazy" style="width:100%;max-height:22rem;object-fit:contain;border-radius:6px;margin-top:.4rem">{% endif %}
+        {% endfor %}{% endif %}
+    </div>
+    <div>
+    {# a draft sent through POST /api/approvals has one text and no platforms #}
+    {% if it.draft and not it.platforms %}
+      <div class="plat"><div class="plathead"><strong>Draft</strong> <span class="src">{{ it.draft|length }} characters</span></div>
+        <div class="draft" style="white-space:pre-wrap">{{ it.draft }}</div></div>
+    {% endif %}
+    {% for plat, p in it.platforms.items() %}
+      <div class="plat {{ 'ok' if p.all_ok else 'bad' }}">
+        <div class="plathead"><strong>{{ plat }}</strong>
+          {% if p.status == 'approved' %}<span class="tag">approved</span>{% endif %}
+          <span class="src">{{ p.text|length }}{% if limits.get(plat) %} / {{ limits[plat] }}{% endif %} characters</span></div>
+        <div class="draft">{% if p.text %}{{ p.html|safe }}{% else %}<em class="src">(blank, by rule)</em>{% endif %}</div>
+        <ul class="checks">{% for c in p.checks %}<li class="{{ 'warn' if c.warn else ('ok' if c.ok else 'bad') }}">{{ '⚠' if c.warn else ('✓' if c.ok else '✗') }} {{ c.name }}: {{ c.words }}</li>{% endfor %}</ul>
+        {% if p.pieces|select|list|length > 1 %}
+        <details><summary>Cut a sentence</summary>
+          {% for s in p.pieces %}{% if s %}
+          <form method="post" action="/act/cut" class="cutrow">
+            <input type="hidden" name="id" value="{{ it.id }}"><input type="hidden" name="platform" value="{{ plat }}">
+            <input type="hidden" name="index" value="{{ loop.index0 }}">
+            <span>{{ s }}</span> <button class="quiet" title="Remove this sentence">Cut</button>
+          </form>{% endif %}{% endfor %}
+          {% if p.cuts %}<div class="src">Already cut: {{ p.cuts|join(' / ') }}</div>{% endif %}
+        </details>{% endif %}
+        {% if p.status != 'approved' %}
+        <form method="post" action="/act/approve" style="display:inline">
+          <input type="hidden" name="id" value="{{ it.id }}"><input type="hidden" name="platform" value="{{ plat }}">
+          <button class="quiet">Approve {{ plat }} only</button></form>{% endif %}
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+  <div class="switch" data-tour="inbox-buttons">
+    <form method="post" action="/act/approve"><input type="hidden" name="id" value="{{ it.id }}"><button>Approve all</button></form>
+    <form method="post" action="/act/ask-chatgpt" class="inline-form">
+      <input type="hidden" name="id" value="{{ it.id }}">
+      <input type="text" name="note" placeholder="What should ChatGPT look at? (optional)">
+      <button class="quiet">Ask ChatGPT to review</button></form>
+    <a class="btn quiet" href="/chatgpt-packet/{{ it.id }}" target="_blank">Text to paste into ChatGPT</a>
+    <form method="post" action="/act/send-back" class="inline-form">
+      <input type="hidden" name="id" value="{{ it.id }}">
+      <input type="text" name="reason" placeholder="Why? (optional)">
+      <button class="quiet">Send back</button></form>
+  </div>
+</div>
+{% else %}
+<div class="card">Nothing waiting for approval.</div>
+{% endfor %}
+
+{% endblock %}

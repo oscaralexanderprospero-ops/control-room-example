@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Link your phone</h1>
+<div class="card" style="max-width:28rem">
+  <p>Point your phone's camera at this and tap the link it shows.</p>
+  <div style="background:#fff;padding:.5rem;border-radius:8px;display:inline-block;max-width:100%">{{ qr|safe }}</div>
+  <p class="src">Works once, for the next {{ minutes }} minutes, and only on a phone signed in to your Tailscale.</p>
+  <p><a class="btn quiet" href="/ward#phone">Done</a></p>
+</div>
+{% endblock %}

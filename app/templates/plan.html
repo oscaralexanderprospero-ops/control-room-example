@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% macro t12(t) %}{% set h = t[:2]|int %}{{ (h % 12) or 12 }}:{{ t[3:5] }} {{ 'PM' if h >= 12 else 'AM' }}{% endmacro %}
+{% macro buttons(x, primary=False) %}
+  <form method="post" action="/act/plan" style="display:inline">
+    <input type="hidden" name="key" value="{{ x.key }}"><input type="hidden" name="what" value="{{ x.what }}">
+    {% if primary %}
+      {% if x.ask %}<input type="hidden" name="ask" value="{{ x.ask }}"><button name="op" value="ask">Ask the team to fix it</button>{% endif %}
+      {% if x.link %}<a class="btn quiet" href="{{ x.link }}">Go there →</a>{% endif %}
+      <button {{ 'class=quiet' if x.ask }} name="op" value="done">✓ Done</button>
+      <button class="quiet" name="op" value="later">Not now</button>
+    {% else %}
+      {% if x.ask %}<input type="hidden" name="ask" value="{{ x.ask }}"><button class="quiet" name="op" value="ask">Ask the team</button>{% endif %}
+      <button class="quiet" name="op" value="now">Do this now</button>
+      <button class="quiet" name="op" value="done">✓ Done</button>
+      {% if x.mine %}<button class="quiet danger-text" name="op" value="drop" onclick="return confirm('Drop this from your day? It stays in the record, marked dropped.')">Drop it</button>{% endif %}
+    {% endif %}
+  </form>
+{% endmacro %}
+{% macro tags(x) %}{% if x.urgent %}<span class="tag bad">needs you now</span>{% endif %}{% if x.time %}<span class="tag">{{ t12(x.time) }}</span>{% endif %}{% if x.overdue %}<span class="tag bad">overdue</span>{% endif %}<span class="tag {{ '' if x.mine else 'warn' }}">{{ x.kind }}</span>{% if x['from'] %}<span class="tag">carried over</span>{% endif %}{% endmacro %}
+{% block body %}
+<h1 data-tour="plan-title">My day</h1>
+<p class="lead">One thing at a time. Do the one at the top, then press Done. "Not now" moves it out of the way. Nothing on this page posts anything.</p>
+
+{% if request.args.get('done') == 'asked' %}<div class="notice">Sent to Claude, with what the app found. It's moved to "Put off" so it's out of your way; it comes back tomorrow if it's still stuck.</div>{% endif %}
+{% if p.urgent > 1 %}<div class="notice warn">{{ p.urgent }} things need you now. They're at the top, one at a time.</div>{% endif %}
+<section class="nowcard{{ ' urgent' if p.now and p.now.urgent }}" id="now" data-tour="plan-now">
+{% if p.now %}
+  <div class="src">{{ 'Needs you now' if p.now.urgent else 'Now' }}</div>
+  <div class="nowtext">{{ p.now.what }}</div>
+  <div>{{ tags(p.now) }}</div>
+  <div class="fixrow" style="margin-top:.8rem">{{ buttons(p.now, True) }}</div>
+  <div class="focus" data-tour="plan-focus">
+    <button type="button" class="quiet" id="focusbtn">⏱ Focus for 25 minutes</button>
+    <span id="focusleft" class="src"></span>
+  </div>
+{% elif p.later %}
+  <div class="nowtext">Everything left is something you put off.</div>
+  <p class="src">Pick one from "Put off" below when you're ready, or leave it for tomorrow. It carries over by itself if it's yours.</p>
+{% else %}
+  <div class="nowtext">Nothing left right now.</div>
+  <p class="src">{% if p.done %}{{ p.done|length }} done today. {% endif %}Add something below if you want to.</p>
+{% endif %}
+</section>
+{% if p.done %}<p class="src donecount">✓ {{ p.done|length }} done today</p>{% endif %}
+
+{% macro row(x, n) %}
+<div class="note planrow"><span class="stepno">{{ n }}</span>
+  <div class="plantext">{% if x.link %}<a href="{{ x.link }}">{{ x.what }}</a>{% else %}{{ x.what }}{% endif %} {{ tags(x) }}</div>
+  <div class="planbtns">{{ buttons(x) }}</div></div>
+{% endmacro %}
+<h2 data-tour="plan-then">Then</h2>
+{% for x in p.next[:3] %}{{ row(x, loop.index + 1) }}{% else %}<p class="src">Nothing after this one.</p>{% endfor %}
+{% if p.next|length > 3 %}
+<details class="planmore"><summary>Show the other {{ p.next|length - 3 }} (you don't need these yet)</summary>
+{% for x in p.next[3:] %}{{ row(x, loop.index + 4) }}{% endfor %}
+</details>
+{% endif %}
+
+{% if p.waiting %}
+<h2>Later today, at a set time</h2>
+<p class="src">These join the list {{ 15 }} minutes before their time.</p>
+{% for x in p.waiting %}
+<div class="note planrow"><div class="plantext">{{ x.what }} {{ tags(x) }}</div><div class="planbtns">{{ buttons(x) }}</div></div>
+{% endfor %}
+{% endif %}
+
+{% if p.later %}
+<h2>Put off</h2>
+{% for x in p.later %}
+<div class="note planrow"><div class="plantext">{% if x.link %}<a href="{{ x.link }}">{{ x.what }}</a>{% else %}{{ x.what }}{% endif %} {{ tags(x) }}</div>
+  <div class="planbtns">{{ buttons(x) }}</div></div>
+{% endfor %}
+{% endif %}
+
+<h2 id="add" data-tour="plan-add">Add something</h2>
+{% if request.args.get('done') == 'added' %}<div class="notice">Added.</div>{% endif %}
+<form method="post" action="/act/plan" class="card">
+  <input type="hidden" name="op" value="add">
+  <div class="tellrow">
+    <textarea name="text" id="planwords" placeholder="Type or say one thing to do" required style="min-height:3rem"></textarea>
+    <button type="button" class="quiet mic" data-mic="planwords" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+  </div>
+  <div class="tellrow">
+    <label class="src">At a set time (optional) <input type="time" name="time"></label>
+    <select name="day" aria-label="Which day">
+      <option value="{{ p.day }}">Today</option>
+      <option value="{{ p.tomorrow_day }}">Tomorrow</option>
+    </select>
+    <button>Add</button>
+  </div>
+</form>
+
+{% if p.tomorrow %}
+<h2>Tomorrow so far</h2>
+<ul>{% for m in p.tomorrow %}<li>{% if m.time %}<span class="tag">{{ t12(m.time) }}</span>{% endif %}{{ m.text }}</li>{% endfor %}</ul>
+{% endif %}
+
+{% if p.done %}
+<h2>Done today</h2>
+{% for x in p.done %}
+<div class="note planrow done"><div class="plantext"><span class="src">{{ t12(x.at) }}</span> {{ x.text }}</div>
+  <div class="planbtns"><form method="post" action="/act/plan" style="display:inline">
+    <input type="hidden" name="key" value="{{ x.key }}"><button class="quiet" name="op" value="undo">Undo</button></form></div></div>
+{% endfor %}
+{% endif %}
+<p class="src">What's here: your own items, plus what the app already knows is waiting on you (due dates, your Inbox, Blocked on you, the team's questions, and seasons coming up on Marketing). Big piles show as one item. Your unfinished items carry over to tomorrow by themselves.</p>
+
+{% endblock %}

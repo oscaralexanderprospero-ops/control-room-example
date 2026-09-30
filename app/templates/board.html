@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block body %}
+<h1 data-tour="board-title">{{ b.title }}</h1>
+<p class="lead">Copied from Kimi Work's "{{ b.kimi_tab }}" tab. Everything here saves to your Sheet (Boards tab). Nothing is deleted: items are ticked or archived. Anything older than a week shows STALE, with a "Still true" button.</p>
+
+<div class="boardgrid">
+{% for w in widgets %}
+<section class="card widget w-{{ w.type }}" id="{{ w.key }}">
+  <h2 style="margin-top:0">{{ w.title }}</h2>
+  {% if w.note %}<p class="src">{{ w.note }}</p>{% endif %}
+
+  {% if w.type == 'tiles' %}
+    <div class="tiles">{% for r in w.rows %}
+      <div class="tile"><div class="num">{{ r.Title }}</div><div>{{ r.Detail }}</div>
+        {% if r.Owner %}<div class="src">Owner: {{ r.Owner }}</div>{% endif %}
+        <div class="src">{{ r.Source }}{% if stale(r['As of']) %}<span class="stale">STALE</span>{% endif %}</div>
+        {% if stale(r['As of']) %}{{ fix(r) }}{% endif %}
+      </div>{% endfor %}</div>
+
+  {% elif w.type == 'calendar' %}
+    <div class="cal">{% for d in calendar %}
+      <div class="calday"><strong>{{ d.date.strftime('%a') }}</strong> <span class="src">{{ d.date.strftime('%d %b') }}</span>
+        {% for it in d['items'] %}<div class="calitem"><span class="tag">{{ it.kind }}</span> {{ it.text }}</div>{% else %}<div class="src">nothing set</div>{% endfor %}
+      </div>{% endfor %}</div>
+
+  {% elif w.type == 'checklist' %}
+    {% set done = w.rows|selectattr('Done','equalto','yes')|list %}
+    <div class="src">Done {{ done|length }} / {{ w.rows|length }}</div>
+    {% if w.groups %}<div class="switch daymode" data-widget="{{ w.key }}">
+      {% if w.key == 'focus' %}<button class="quiet" type="button" onclick="dayMode(this,1)">Rough day</button><button class="quiet" type="button" onclick="dayMode(this,2)">Normal day</button><button type="button" onclick="dayMode(this,3)">Good day</button>{% endif %}</div>{% endif %}
+    {# items whose Stage is blank or not one of the groups show under the last group, never vanish #}
+    {% for g in (w.groups or ['']) %}
+      {% set items = (w.rows|selectattr('Stage','equalto',g)|list + (w.rows|rejectattr('Stage','in',w.groups)|list if loop.last else [])) if w.groups else w.rows %}
+      {% if items %}{% if g %}<h3 class="grp" data-level="{{ loop.index }}">{{ g }}</h3>{% endif %}
+      <ul class="check" data-level="{{ loop.index }}">{% for r in items %}
+        <li class="{{ 'done' if r.Done == 'yes' }}">
+          <form method="post" action="/act/board" style="display:inline"><input type="hidden" name="op" value="toggle"><input type="hidden" name="id" value="{{ r.ID }}">
+            <button class="tick" title="Tick or untick">{{ '☑' if r.Done == 'yes' else '☐' }}</button></form>
+          {{ r.Title }}{% if r.Platform %} <span class="tag">{{ r.Platform }}</span>{% endif %}
+          {% if r.Detail %}<div class="src">{{ r.Detail }}</div>{% endif %}
+          {% if stale(r['As of']) and r.Done != 'yes' %}<span class="stale">STALE</span>{{ fix(r) }}{% endif %}
+        </li>{% endfor %}</ul>{% endif %}
+    {% endfor %}
+
+  {% elif w.type == 'kanban' %}
+    <div class="kanban">{% for st in w.stages %}
+      {# cards with a blank or unknown stage sit in the first column, so they can still be moved #}
+      {% set cards = w.rows|selectattr('Stage','equalto',st)|list + (w.rows|rejectattr('Stage','in',w.stages)|list if loop.first else []) %}
+      <div class="kcol"><div class="khead">{{ st }} <span class="src">{{ cards|length }}</span></div>
+      {% for r in cards %}<div class="kcard"><strong>{{ r.Title }}</strong>{% if r.Detail %}<div class="src">{{ r.Detail }}</div>{% endif %}
+        {% if r.Platform %}<span class="tag">{{ r.Platform }}</span>{% endif %}
+        {% if stale(r['As of']) %}<span class="stale">STALE</span>{% endif %}
+        <form method="post" action="/act/board" class="kmove"><input type="hidden" name="id" value="{{ r.ID }}">
+          <button class="quiet" name="op" value="back" title="Move back">‹</button><button class="quiet" name="op" value="forward" title="Move forward">›</button>
+          {% if stale(r['As of']) %}<button class="quiet" name="op" value="still">Still true</button>{% endif %}
+          <button class="quiet" name="op" value="archive" title="Archive (kept, not deleted)">Archive</button></form>
+      </div>{% endfor %}</div>{% endfor %}</div>
+
+  {% elif w.type == 'table' %}
+    <div class="wrap"><table><tr><th>Platform</th>{% for c in w.cols %}<th>{{ c }}</th>{% endfor %}<th>Source</th></tr>
+    {% for r in w.rows %}{% set vals = (r.Detail or '').split('|') %}
+      <tr><td><strong>{{ r.Title }}</strong>{% if r.Owner %}<div class="src">{{ r.Owner }}</div>{% endif %}</td>
+      {% for c in w.cols %}<td>{{ vals[loop.index0] if vals|length > loop.index0 else '' }}</td>{% endfor %}
+      <td class="src">{{ r.Source }}, {{ r['As of'] }}{% if stale(r['As of']) %}<span class="stale">STALE</span>{% endif %}
+        <form method="post" action="/act/board" class="inline-form"><input type="hidden" name="op" value="set-detail"><input type="hidden" name="id" value="{{ r.ID }}">
+          <input type="text" name="value" value="{{ r.Detail }}" aria-label="Values, separated by |" style="width:9rem"><button class="quiet">Update</button></form></td></tr>
+    {% endfor %}</table></div>
+
+  {% elif w.type == 'tagbank' %}
+    {% for st in w.stages %}{% set tags = w.rows|selectattr('Stage','equalto',st)|list %}
+      <details {{ 'open' if tags }}><summary>{{ st }} <span class="src">{{ tags|length }}</span></summary>
+      <ul>{% for r in tags %}<li>{{ r.Title }} <span class="src">{{ r.Platform }}</span></li>{% endfor %}</ul></details>{% endfor %}
+
+  {% elif w.type == 'notes' %}
+    {% for r in w.rows|sort(attribute='As of', reverse=True) %}
+      <div class="note">{% if r.Stage %}<span class="tag {{ 'bad' if r.Stage=='high' else 'warn' }}">{{ r.Stage }}</span>{% endif %}
+        <strong>{{ r.Title }}</strong> <span class="src">{{ r.Date or r['As of'] }}</span>
+        <div>{{ r.Detail }}</div>{% if r.Owner %}<div class="src">Owner: {{ r.Owner }}</div>{% endif %}
+        <form method="post" action="/act/board" style="display:inline"><input type="hidden" name="op" value="archive"><input type="hidden" name="id" value="{{ r.ID }}"><button class="quiet" style="padding:0 .5rem">Archive</button></form>
+      </div>{% else %}<p class="src">Nothing yet.</p>{% endfor %}
+
+  {% elif w.type == 'log' %}
+    {% set mins = w.rows|map(attribute='Detail')|map('int', 0)|sum %}
+    <div class="grid"><div><span class="num">{{ w.rows|length }}</span> sessions</div><div><span class="num">{{ mins }}</span> minutes all time</div></div>
+    <ul>{% for r in w.rows|sort(attribute='Date', reverse=True) %}<li>{{ r.Date }}: {{ r.Title }} <span class="src">{{ r.Detail }} min</span></li>{% endfor %}</ul>
+
+  {% elif w.type == 'link' %}
+    <p><a class="btn" href="{{ w.href }}">Open it</a></p>
+  {% endif %}
+
+  {% if w.type in ('checklist','kanban','notes','log','tagbank','table') %}
+  <details class="addrow"><summary>Add</summary>
+    <form method="post" action="/act/board" class="stack">
+      <input type="hidden" name="op" value="add"><input type="hidden" name="board" value="{{ board }}"><input type="hidden" name="widget" value="{{ w.key }}">
+      <input type="text" name="title" required placeholder="{{ 'Platform' if w.type=='table' else ('What did you record?' if w.type=='log' else 'Title') }}">
+      <input type="text" name="detail" placeholder="{{ 'Values separated by |' if w.type=='table' else ('Minutes' if w.type=='log' else 'Detail (optional)') }}">
+      {% if w.stages or w.groups %}<select name="stage">{% for s in (w.stages or w.groups) %}<option>{{ s }}</option>{% endfor %}</select>{% endif %}
+      {% if w.type == 'notes' and w.key == 'coach' %}<select name="stage"><option>high</option><option>medium</option><option>low</option></select>{% endif %}
+      {% if w.type in ('log','notes') %}<input type="date" name="date">{% endif %}
+      <input type="text" name="platform" placeholder="Platform (optional)">
+      <button>Add</button>
+    </form></details>
+  {% endif %}
+</section>
+{% endfor %}
+</div>
+<script>
+function dayMode(btn, level){
+  const sec = btn.closest('section');
+  sec.querySelectorAll('.daymode button').forEach(b=>b.className='quiet'); btn.className='';
+  sec.querySelectorAll('[data-level]').forEach(el=>{ el.style.display = (+el.dataset.level <= level) ? '' : 'none'; });
+  try{localStorage.setItem('oms_daymode', level)}catch(e){}
+}
+</script>
+{% endblock %}

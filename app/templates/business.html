@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block body %}
+<h1 data-tour="biz-title">Business</h1>
+<p class="lead">Orders to ship, messages waiting, custom orders and repairs, and reviews. The agent's daily Etsy check fills these in; you can add or change anything by hand. Nothing is sent to a customer without your click.</p>
+
+{% macro rowform(tab, r) %}
+  <form method="post" action="/act/business" class="inline-form">
+    <input type="hidden" name="tab" value="{{ tab }}"><input type="hidden" name="id" value="{{ r.ID }}"><input type="hidden" name="op" value="status">
+    <select name="value" aria-label="Status">{% for s in cfg[tab].statuses %}<option {{ 'selected' if s == r[status_col[tab]] }}>{{ s }}</option>{% endfor %}</select>
+    <button class="quiet">Save</button></form>
+{% endmacro %}
+
+{% macro addform(tab, extra='') %}
+<details><summary>Add by hand</summary>
+  <form method="post" action="/act/business" class="lugrid">
+    <input type="hidden" name="tab" value="{{ tab }}"><input type="hidden" name="op" value="add">
+    {% for f in cfg[tab].fields %}
+      {% if f == 'Kind' %}<label>Kind<select name="Kind">{% for k in cfg[tab].kinds %}<option>{{ k }}</option>{% endfor %}</select></label>
+      {% elif 'verbatim' in f or f in ('Notes','Reply','What') %}<label class="wide">{{ f }}<textarea name="{{ f }}" style="min-height:4rem"></textarea></label>
+      {% elif f in ('Due','Date') %}<label>{{ f }}<input type="date" name="{{ f }}"></label>
+      {% elif f in ('Ship or answer by','Received (Central)') %}<label>{{ f }}<input type="text" name="{{ f }}" placeholder="2026-09-28 14:00"></label>
+      {% else %}<label>{{ f }}<input type="text" name="{{ f }}"></label>{% endif %}
+    {% endfor %}
+    <div class="wide"><button>Add</button></div>
+  </form></details>
+{% endmacro %}
+
+<h2>Orders and messages</h2>
+<div class="card">
+  {% set rows = tabs['Orders'] %}
+  {% for r in rows if r._open %}
+  <div class="note"><span class="tag {{ 'bad' if r._urgent else 'warn' }}">{{ r.Kind }}</span>
+    <strong>{{ r.Item or r.Notes[:60] }}</strong> {% if r['Listing ID'] and has_photo(r['Listing ID']) %}<img class="lthumb" src="/listing-photo/{{ r['Listing ID'] }}" alt="" style="width:48px;height:48px;vertical-align:middle">{% endif %}
+    <span class="src">{{ r.Customer }} · received {{ r['Received (Central)'] }}{% if r['Ship or answer by'] %} · by {{ r['Ship or answer by'] }}{% endif %}</span>
+    {% if r._left %}<span class="tag {{ 'bad' if r._urgent else '' }}">{{ r._left }}</span>{% endif %}
+    {{ rowform('Orders', r) }}
+    {% if r.Notes %}<div class="src">{{ r.Notes }}</div>{% endif %}
+    <form method="post" action="/act/business" class="inline-form"><input type="hidden" name="tab" value="Orders"><input type="hidden" name="id" value="{{ r.ID }}"><input type="hidden" name="op" value="hand">
+      <input type="text" name="what" placeholder="{{ 'What to reply (your words)' if r.Kind == 'Message' else 'What needs doing?' }}"><button class="quiet">Hand to {{ duty.passes }}</button></form>
+  </div>
+  {% else %}<p>Nothing waiting. <span class="src">(Filled by the agent's Etsy check, or by you.)</span></p>{% endfor %}
+  <details><summary class="src">Finished ({{ rows|rejectattr('_open')|list|length }})</summary>{% for r in rows if not r._open %}<div class="src">{{ r.ID }} {{ r.Kind }} {{ r.Item }} · {{ r.Status }} {{ r.Tracking }}</div>{% endfor %}</details>
+  {{ addform('Orders') }}
+</div>
+
+<h2>Custom orders and repairs</h2>
+<div class="card">
+  <div class="grid">{% for s in slots %}<div><span class="num">{{ s.used }}</span> <span class="src">of {{ s.limit }}</span><div>{{ s.name }} this month</div></div>{% endfor %}</div>
+  <p class="src">{{ slot_source }}</p>
+  {% for r in tabs['Custom Orders'] if r._open %}
+  <div class="note"><span class="tag warn">{{ r.Kind }}</span> <strong>{{ r.What[:100] }}</strong>
+    <span class="src">{{ r.Customer }} · {{ r.Channel }}{% if r.Price %} · {{ r.Price }}{% endif %}{% if r.Deposit %} · deposit {{ r.Deposit }}{% endif %}{% if r.Due %} · due {{ r.Due }}{% endif %}</span>
+    {% if r._left %}<span class="tag {{ 'bad' if r._urgent else '' }}">{{ r._left }}</span>{% endif %}
+    {{ rowform('Custom Orders', r) }}
+    {% if r.Materials %}<div class="src">Materials: {{ r.Materials }}</div>{% endif %}
+    {% if r['His notes (verbatim)'] %}<div>{{ r['His notes (verbatim)'] }}</div>{% endif %}
+  </div>
+  {% else %}<p>No custom orders or repairs open.</p>{% endfor %}
+  {{ addform('Custom Orders') }}
+</div>
+
+<h2>Customer reviews</h2>
+<div class="card">
+  {% for r in tabs['Customer Reviews'] %}
+  <div class="note"><strong>{{ '★' * (r.Stars|int(0)) }}{{ '☆' * (5 - r.Stars|int(0)) if r.Stars }}</strong> {{ r.Listing }} <span class="src">{{ r.Reviewer }} · {{ r.Date }}</span>
+    {{ rowform('Customer Reviews', r) }}
+    {% if r['Review (verbatim)'] %}<div style="white-space:pre-wrap">"{{ r['Review (verbatim)'] }}"</div>{% endif %}
+    {% if r.Reply %}<div class="srcbox"><strong>Reply:</strong> {{ r.Reply }}</div>{% endif %}
+    <div class="src">{{ r.Source }}</div>
+    {% if r._open %}<form method="post" action="/act/business" class="inline-form"><input type="hidden" name="tab" value="Customer Reviews"><input type="hidden" name="id" value="{{ r.ID }}"><input type="hidden" name="op" value="hand">
+      <input type="text" name="what" placeholder="What you want to say back (your words)"><button class="quiet">Hand to {{ duty.passes }}</button></form>{% endif %}
+  </div>
+  {% else %}<p>No reviews recorded yet.</p>{% endfor %}
+  {{ addform('Customer Reviews') }}
+</div>
+{% endblock %}

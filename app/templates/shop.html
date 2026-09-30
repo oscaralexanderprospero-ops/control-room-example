@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_skill.html" import skill_button with context %}
+{% block body %}
+{% macro edit(l) %}
+<details id="L{{ l._row }}"><summary class="src">Edit this listing</summary>
+  <form method="post" action="/act/listing-edit" class="lugrid">
+    <input type="hidden" name="id" value="{{ l['Etsy listing ID'] }}"><input type="hidden" name="row" value="{{ l._row }}"><input type="hidden" name="was" value="{{ l.Piece }}">
+    <div class="wide src">Changes the record in your Sheet for listing {{ l['Etsy listing ID'] or '(no ID yet)' }}. It does not change anything on Etsy.</div>
+    <label>Piece<input type="text" name="Piece" value="{{ l.Piece }}"></label>
+    <label>Price<input type="text" name="Price" value="{{ l.Price }}"></label>
+    <label>Status<select name="Status">{% for s in statuses %}<option {{ 'selected' if s == l.Status }}>{{ s }}</option>{% endfor %}
+      {% if l.Status not in statuses %}<option selected>{{ l.Status }}</option>{% endif %}</select></label>
+    <label class="wide">Notes<textarea name="Notes" style="min-height:4rem">{{ l.Notes }}</textarea></label>
+    <div class="wide"><button>Save</button></div>
+  </form></details>
+{% endmacro %}
+<h1>Shop</h1>
+<p class="lead">Live Etsy listings, and drafts waiting for your Publish click. A shop link only ever goes with a listing shown as live here.</p>
+{% if request.args.get('done') == 'saved' %}<div class="notice">Saved to your Sheet.</div>{% endif %}
+{% if request.args.get('done') == 'nochange' %}<div class="notice">Nothing had changed, so nothing was saved.</div>{% endif %}
+<div class="subnav"><a class="btn" href="/listings/updates">Listings that need updating →</a> <a class="btn quiet" href="/marketing">Marketing, sales and seasonal SEO →</a></div>
+{{ skill_button('etsy-listing', 'Make a new listing from a piece', 'writes the title, tags and description from how you describe the piece, and builds the Etsy draft from its photos. Drafts only; you click Publish.') }}
+
+<h2 id="etsy">Approved changes going onto Etsy</h2>
+{% if request.args.get('done') == 'etsy-saved' %}<div class="notice">Recorded as saved. The next Etsy run checks it shows on the listing.</div>{% endif %}
+<div class="card">
+  <p class="src">Everything you approve for Etsy (in your Inbox, or "Save all, and hand this one over" on Listings that need updating) comes here. The Etsy changes routine picks it up within the hour, fills it into the listing's edit screen in your Chrome, and stops there for your Save on live listings. Drafts stay drafts.</p>
+  {% for c in etsy_pending %}
+  <div class="note"><span class="tag {{ 'warn' if 'Save' in c.state else '' }}">{{ 'waiting for your Save' if 'Save' in c.state else 'waiting for the next Etsy run' }}</span>
+    <strong>{{ c.item[:110] }}</strong>
+    <div class="src">{{ c.change }}: <span class="mono">{{ c.text[:200] }}</span></div>
+    <div class="switch">{% for lid in c.listing_ids %}<a class="btn quiet" href="https://www.etsy.com/your/shops/me/listing-editor/edit/{{ lid }}" target="_blank">Open {{ lid }} on Etsy &#8599;</a>{% endfor %}
+      {% if 'Save' in c.state %}<form method="post" action="/act/etsy-saved" style="display:inline"><input type="hidden" name="source" value="{{ c.source }}"><input type="hidden" name="id" value="{{ c.id }}"><input type="hidden" name="platform" value="{{ c.platform }}"><button>I've saved it on Etsy</button></form>{% endif %}</div>
+  </div>
+  {% else %}<p>Nothing waiting: every approved Etsy change is on Etsy.</p>{% endfor %}
+</div>
+
+<h2>Live listings</h2>
+<div class="grid">
+{% for l in live %}
+<div class="card">
+  {% if has_photo(l['Etsy listing ID']) %}<img src="/listing-photo/{{ l['Etsy listing ID'] }}" alt="Main photo of {{ l.Piece }}" style="width:100%;max-height:260px;object-fit:cover;border-radius:8px">{% endif %}
+  <strong>{{ l.Piece }}</strong>
+  <div>{% if l.Price %}<span class="num">{{ l.Price }}</span>{% endif %}</div>
+  <div><a href="{{ l.URL }}" target="_blank">Listing {{ l['Etsy listing ID'] }}</a></div>
+  <div class="src">Listed {{ l.Listed }} · last seen live {{ l['Last verified'] }}
+    {% if stale(l['Last verified']) %}<span class="stale">STALE</span>{% endif %}</div>
+  {% if stale(l['Last verified']) %}
+  <div class="fixrow"><a class="btn quiet" href="{{ l.URL }}" target="_blank">Open the listing &#8599;</a>
+    <form method="post" action="/act/still-true"><input type="hidden" name="tab" value="Listings"><input type="hidden" name="key_header" value="Etsy listing ID"><input type="hidden" name="key" value="{{ l['Etsy listing ID'] }}"><button>Still live</button></form></div>
+  {% endif %}
+  {% if l.Notes %}<p class="src">{{ l.Notes }}</p>{% endif %}
+  <div class="src">Source: {{ l.Source }}</div>
+  {{ skill_button('listing-launch', 'Launch it everywhere', 'gathers this piece\'s photos and video, gets your OK on the copy, and posts it across your platforms with the shop link, spaced to pacing.', 'listing ' ~ l['Etsy listing ID'] ~ ', ' ~ l.Piece ~ ', ' ~ l.URL) }}
+  {{ skill_button('etsy-listing', 'Check or rewrite the listing copy', 'audits or shortens the live copy against your rules; any change stops at Etsy\'s edit screen for your Save.', 'listing ' ~ l['Etsy listing ID'] ~ ', ' ~ l.Piece ~ ', ' ~ l.URL) }}
+  {{ edit(l) }}
+</div>
+{% endfor %}
+</div>
+
+{% set old = [] %}{% set keep = [] %}
+{% for l in drafts %}{% set _ = (old if (l.Notes or '').startswith('OLD DRAFT') else keep).append(l) %}{% endfor %}
+{% if old %}
+<h2>Old drafts you could delete ({{ old|length }})</h2>
+<p class="src">From the Etsy audit on 27 Sep. Deleting on Etsy is permanent, so it's your click there; the app keeps its record either way. Open one, check it, and delete it on Etsy if you agree.</p>
+<div class="wrap"><table><tr><th>Draft</th><th>Why it looks old</th><th></th></tr>
+{% for l in old %}<tr><td>{{ l.Piece }}<div class="src">{{ l['Etsy listing ID'] }}</div></td><td class="src">{{ l.Notes[11:] }}</td>
+<td><a class="btn quiet" href="https://www.etsy.com/your/shops/me/listing-editor/edit/{{ l['Etsy listing ID'] }}" target="_blank">Open on Etsy &#8599;</a></td></tr>{% endfor %}
+</table></div>
+{% endif %}
+
+<h2>Drafts waiting for Publish</h2>
+{% if keep %}
+<div class="grid">{% for l in keep %}<div class="card"><strong>{{ l.Piece }}</strong>
+<div>Draft {{ l['Etsy listing ID'] }}</div><div class="action">Your click: Publish on Etsy.</div>
+{% if l.Notes %}<div class="src">{{ l.Notes }}</div>{% endif %}
+<div class="src">Source: {{ l.Source }}</div>
+{{ skill_button('etsy-listing', 'Finish this Etsy draft', 'fills in or fixes the draft\'s copy and photos. It stays a draft; Publish is your click.', 'draft ' ~ l['Etsy listing ID'] ~ ', ' ~ l.Piece) }}
+{{ edit(l) }}</div>{% endfor %}</div>
+{% else %}<p>None recorded.</p>{% endif %}
+
+<h2>Not live: never link</h2>
+<div class="grid">
+{% for l in other %}<div class="card"><strong>{{ l.Piece }}</strong> <span class="tag warn">{{ l.Status }}</span>
+  <div class="src">Listing {{ l['Etsy listing ID'] or '—' }}</div>
+  {% if l.Notes %}<p class="src">{{ l.Notes }}</p>{% endif %}
+  {{ edit(l) }}</div>{% endfor %}
+</div>
+{% endblock %}

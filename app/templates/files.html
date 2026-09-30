@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Files</h1>
+<p class="lead">What's on the laptop for each batch, all under Control Room\Batches. Nothing here is ever deleted: extra copies move to _to_delete, and only you empty it.</p>
+
+{% if request.args.get('done','').startswith('tidy') %}<div class="notice">Copied. Your old Downloads folders are untouched.</div>{% endif %}
+{% if request.args.get('done','').startswith('moved') %}<div class="notice">Moved to _to_delete. Nothing was deleted.</div>{% endif %}
+{% if request.args.get('done') == 'backup-started' %}<div class="notice">Backup started. It takes a minute or two; refresh to see it.</div>{% endif %}
+
+{% for b in batches %}
+<div class="card">
+  <h2 style="margin-top:0">Batch {{ b.code }}</h2>
+  {% if b.note %}<p class="src">{{ b.note }}</p>{% endif %}
+  {% for g in b.groups %}
+    <details open><summary>{{ g.name }} ({{ g.files|length }})</summary>
+    <ul>{% for f in g.files %}<li>{{ f.name }} <span class="src">{{ '%.1f'|format(f.size/1048576) }} MB</span>
+      <button class="quiet" style="padding:0 .5rem" onclick="showFile(this)" data-path="{{ f.path }}">Show file</button></li>{% endfor %}</ul>
+    </details>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card">No batch folders yet.</div>
+{% endfor %}
+
+{% set todo = plan|rejectattr('exists')|list %}
+{% if todo %}
+<div class="card">
+  <h2 style="margin-top:0">Tidy the old Downloads folders</h2>
+  <p>{{ todo|length }} ready files in _prep24, _prep25, _prep26, _launch26, _gallery26 and _photopass25sep can be <strong>copied</strong> into the batch folders. The originals stay where they are.</p>
+  <form method="post" action="/act/tidy"><button>Copy them in</button></form>
+</div>
+{% endif %}
+
+<h2>Duplicates</h2>
+<div class="card">
+  <p>The app compares file contents, not names. The kept copy stays; extra copies move to <code>_to_delete</code>.</p>
+  <form method="post" action="/act/dupes-scan" style="display:inline"><button class="quiet">Check for duplicates</button></form>
+  {% if dupes is not none %}
+    <p class="src">Checked {{ dupes_at }}.</p>
+    {% for g in dupes %}
+      <div class="card"><div>Keep: <span class="mono">{{ g.keep }}</span></div>
+      {% for m in g.move %}<div>Move: <span class="mono">{{ m }}</span></div>{% endfor %}
+      <div class="src">{{ '%.1f'|format(g.size/1048576) }} MB each, identical contents</div></div>
+    {% else %}<p>No extra copies found.</p>{% endfor %}
+    {% if dupes %}<form method="post" action="/act/dupes-move"><button>Move the extra copies to _to_delete</button></form>{% endif %}
+  {% endif %}
+</div>
+
+<h2>_to_delete</h2>
+<div class="card">
+  <p>{{ to_delete.count }} files, {{ '%.1f'|format(to_delete.bytes/1048576) }} MB.</p>
+  {% if to_delete.count %}
+  <details><summary>See them</summary><ul>{% for f in to_delete.files %}<li class="mono">{{ f }}</li>{% endfor %}</ul></details>
+  <form method="post" action="/act/empty-to-delete" onsubmit="return confirm('Send all {{ to_delete.count }} files in _to_delete to the Recycle Bin?');">
+    <input type="hidden" name="confirm" value="yes"><button class="danger">Empty _to_delete</button>
+  </form>{% endif %}
+</div>
+
+<h2>Backups</h2>
+<div class="card">
+  <p>Copies every page of your website (full text), the Sheet, drafts and logs into <code>Control Room\Backup\&lt;date&gt;</code>, and the text files to Drive. Keys and sign-ins are never included.</p>
+  {% if backup.last %}<p>Last backup: {{ backup.last }} · {{ backup.pages }} website pages{% if stale(backup.last) %}<span class="stale">STALE</span>{% endif %}</p>{% else %}<p>No backup yet.</p>{% endif %}
+  {% if backup.drive_folder_url %}<p><a href="{{ backup.drive_folder_url }}" target="_blank">Backup folder in Drive</a></p>{% endif %}
+  {% if backup.drive_error %}<p class="src">Drive copy: {{ backup.drive_error }}</p>{% endif %}
+  <form method="post" action="/act/backup"><button>Back up now</button></form>
+</div>
+
+<script>
+function showFile(btn){
+  fetch('/act/show-file',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'path='+encodeURIComponent(btn.dataset.path)});
+}
+</script>
+{% endblock %}

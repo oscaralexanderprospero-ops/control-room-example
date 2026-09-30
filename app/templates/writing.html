@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% from "_skill.html" import skill_button with context %}
+{% block body %}
+<h1 data-tour="writing-title">Writing</h1>
+<p class="lead">All your writing: essays, the books and the craft. Capture ideas, open any document to edit, and see what's waiting and what's owed.</p>
+{% if request.args.get('done') == 'answered' %}<div class="notice">Saved in your exact words. Claude builds the piece from them and sends it to your Inbox.</div>{% endif %}
+{% if request.args.get('done') == 'decided' %}<div class="notice">Recorded.</div>{% endif %}
+{% if request.args.get('done') == 'deleted' %}<div class="notice">Deleted from the app. It's still in your Sheet (Writing tab), marked deleted, if you ever want it back.</div>{% endif %}
+
+{% if working_doc %}<p><button type="button" onclick="edOpen()">✎ Open the document you're working on</button></p>{% endif %}
+<div id="ed" class="ed-back" hidden>
+  <div class="ed-box" role="dialog" aria-modal="true" aria-labelledby="ed-name">
+    <div class="ed-head">
+      <div><div class="src" id="ed-kind">Document</div><strong id="ed-name">{{ open_doc[0] if open_doc }}</strong>
+        <div class="src" id="ed-where"></div></div>
+      <div class="switch">
+        <button type="button" onclick="edSaveAll()">Save</button>
+        <button type="button" class="quiet" id="ed-gdoc" onclick="edGdoc()">Open in Google Docs &#8599;</button>
+        <button type="button" class="quiet" onclick="edClose()">Close</button>
+      </div>
+    </div>
+    {% set duty_to = duty.passes if duty.passes in ['Claude','Kimi','ChatGPT'] else 'Claude' %}
+    <div class="switch" id="ed-to"><span class="src">Who makes my edits:</span>
+      {% for a in ['Claude','Kimi','ChatGPT'] %}<button type="button" class="{{ '' if a == duty_to else 'quiet' }}" onclick="edTo(this,'{{ a }}')">{{ a }}</button>{% endfor %}</div>
+    <p class="src" id="ed-status">Loading…</p>
+    <div id="ed-body" class="ed-body"></div>
+    <p class="src" id="ed-help"></p>
+  </div>
+</div>
+
+{% set caps = w.get('capture', []) %}
+<section class="card" id="capture" data-tour="capture">
+  <h2 style="margin-top:0">Capture and staging <span class="src">{{ caps|selectattr('Status','equalto','staged')|list|length }} staged · {{ caps|rejectattr('Status','equalto','staged')|list|length }} approved</span></h2>
+  <p class="src">Write or speak while your hands are busy. Your words are kept exactly as they come out. Send them to a new piece, or into a section of any document. Approve a capture and Claude takes it from there, tidying only grammar and false starts.</p>
+  {% if request.args.get('done') == 'captured' %}<div class="notice">Staged, word for word.</div>{% endif %}
+  <form method="post" action="/act/capture">
+    <div class="lugrid">
+      <label>What it's about<select name="category">
+        {% for group, subs in topics %}<optgroup label="{{ group }}">{% for s in subs %}<option>{{ s }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+      <label>Where it goes<select name="doc" id="capdoc" onchange="capDoc(this.value)">
+        <option value="new" selected>A new piece (no document yet)</option>
+        {% for area, ds in groups %}<optgroup label="{{ area }}">{% for d in ds %}<option value="{{ d.id }}">{{ d.name[:90] }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+      <label id="captitle-l">Working title (optional)<input type="text" name="title" id="captitle"></label>
+      <label id="capsec-l" hidden>Section<select name="section" id="capsec"><option>General notes</option></select></label>
+    </div>
+    <div class="tellrow"><textarea name="words" id="capwords" placeholder="Dictated or typed text collects here. Read it over before staging." required></textarea>
+      <button type="button" class="quiet" onclick="speakInto('capwords', this)">🎤 Speak</button></div>
+    <p><button>Stage it</button></p>
+  </form>
+  {% if caps|selectattr('Status', 'equalto', 'staged')|list|length > 1 %}
+  <div class="bulkbar" data-group="captures">
+    <label><input type="checkbox" class="bulkall"> Select all staged</label> <span class="src bulkcount"></span>
+    <button type="button" data-op="capture-approve" data-confirm="Approve all {n} selected captures and send them to Claude to merge?">Approve selected</button>
+  </div>{% endif %}
+  {% for c in caps|reverse %}{% if loop.index <= 8 %}
+  <div class="note">{% if c.Status == 'staged' %}<input type="checkbox" class="bulkpick" data-group="captures" value="{{ c.ID }}" aria-label="Select {{ c.ID }}">{% endif %}<strong class="ed-click" onclick="edOpenItem('{{ c.ID }}')">{{ where_of(c) }}</strong> <span class="tag {{ 'warn' if c.Status == 'staged' else '' }}">{{ c.Status }}</span> <span class="src">{{ c['As of'] }}</span>
+    <div class="ed-click" style="white-space:pre-wrap" onclick="edOpenItem('{{ c.ID }}')">{{ c['His words (verbatim)'] }}</div>
+    <div class="switch"><button type="button" class="quiet" onclick="edOpenItem('{{ c.ID }}')">✎ Edit</button>
+    {% if c.Status == 'staged' %}<form method="post" action="/act/capture-approve"><input type="hidden" name="id" value="{{ c.ID }}"><button class="quiet">Approve: merge it</button></form>{% endif %}
+    <form method="post" action="/act/writing-delete" onsubmit="return confirm('Delete capture {{ c.ID }} from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="{{ c.ID }}"><button class="quiet danger-text">Delete</button></form></div>
+  </div>{% endif %}{% endfor %}
+</section>
+
+{{ skill_button('longform-essay-multiplatform', 'Build an essay or post from my words', 'sources your own words, fact-checks every claim, and cuts it for each platform. Say which capture, answer or document to build from. The draft comes to your Inbox.') }}
+
+<h2>Drafts waiting on you</h2>
+{% for r in w.get('draft', []) %}
+<div class="card" id="{{ r.ID }}">
+  <div><span class="src">Draft {{ r.ID }}</span> <strong class="ed-click" onclick="edOpenItem('{{ r.ID }}')">{{ r.Item }}</strong></div>
+  <div class="src">{{ r.Owner }}{% if r.Due %} · public date {{ r.Due }}{% endif %} · <span class="tag warn">{{ r.Status }}</span></div>
+  <form method="post" action="/act/writing-decide" class="fixrow">
+    <input type="hidden" name="id" value="{{ r.ID }}">
+    <button type="button" class="quiet" onclick="edOpenItem('{{ r.ID }}')">✎ Edit</button>
+    <button name="decision" value="yes">Yes, publish as planned</button>
+    <button class="quiet" name="decision" value="no">No</button>
+    {% if 'stale' in r.Status %}<button class="quiet" name="decision" value="drop it">Drop it</button>{% endif %}
+    <input type="text" name="reason" placeholder="Anything to change? (sends it back)" style="max-width:22rem">
+    <button class="quiet" name="decision" value="send back">Send back</button>
+  </form>
+  {{ skill_button('longform-essay-multiplatform', 'Finish or cut it for each platform', 'checks the facts, keeps only your words, and cuts this draft for each platform.', 'draft ' ~ r.ID ~ ': ' ~ r.Item) }}
+  <form method="post" action="/act/writing-delete" onsubmit="return confirm('Delete draft {{ r.ID }} from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="{{ r.ID }}"><button class="quiet danger-text">Delete this draft</button></form>
+  <div class="src">Source: {{ r.Source }} · as of {{ r['As of'] }}{% if stale(r['As of']) %}<span class="stale">STALE</span>{% endif %}</div>
+</div>
+{% endfor %}
+
+<h2 data-tour="prompts">Questions you owe (your positions)</h2>
+<p class="src">{{ prompt_why[0] }} <em>({{ prompt_why[1] }})</em></p>
+{% for r in w.get('prompt', []) %}
+<div class="card" id="{{ r.ID }}">
+  <div><strong>Question {{ r.ID }}</strong> · for the blog slot on {{ r.Due }} · <span class="tag {{ '' if r.Status.startswith('answered') else 'warn' }}">{{ r.Status }}</span></div>
+  <p><strong>{{ r.Item }}</strong></p>
+  {% set ctx = prompt_context(r.ID) %}
+  {% if ctx %}<div class="srcbox"><div class="src" style="margin-bottom:.3rem">Context for this question</div>
+    <ul style="margin:0;padding-left:1.2rem">{% for t, s in ctx %}<li>{{ t }} <span class="src">({{ s }})</span></li>{% endfor %}</ul>
+    <div class="src" style="margin-top:.3rem">Your answer goes into the Writing tab word for word, and the piece for this slot is built from it.</div></div>{% endif %}
+  {% if r['His words (verbatim)'] %}<div class="srcbox"><strong>Your answer:</strong> {{ r['His words (verbatim)'] }}</div>
+  {% else %}
+  <details><summary>Answer this</summary>
+    <form method="post" action="/act/writing-answer">
+      <input type="hidden" name="id" value="{{ r.ID }}">
+      <div class="tellrow"><textarea name="words" id="ans-{{ r.ID }}" required></textarea>
+        <button type="button" class="quiet" onclick="speakInto('ans-{{ r.ID }}', this)">🎤 Speak</button></div>
+      <p><button>Save my answer</button></p>
+    </form>
+  </details>{% endif %}
+</div>
+{% endfor %}
+
+<h2>Publishing rhythm</h2>
+<div class="wrap"><table><tr><th>What</th><th>Who</th><th>State</th><th>Source</th></tr>
+{% for r in w.get('rhythm', []) %}
+<tr><td>{{ r.Item }}</td><td>{{ r.Owner }}</td><td><strong>{{ r.Status }}</strong>{% if r.Due %}<div class="src">next: {{ r.Due }}</div>{% endif %}</td>
+<td class="src">{{ r.Source }} · {{ r['As of'] }}{% if stale(r['As of']) %}<span class="stale">STALE</span>{% endif %}</td></tr>
+{% endfor %}</table></div>
+
+<h2 id="library">Library: open any of your writings</h2>
+<div class="card" data-tour="library">
+  <p class="src">{{ library.docs|length }} documents in Books and Longform, Listing Copy and Publishing Plans{% if library.checked %}, read {{ library.checked }}{% endif %}. "Open to edit" opens it in Google Docs, where you can change anything. "Edit here" opens it section by section below.</p>
+  <div class="switch" id="libareas"><button type="button" onclick="libArea(this,'')">All</button>
+    {% for a in areas %}<button type="button" class="quiet" onclick="libArea(this,'{{ a }}')">{{ a }}</button>{% endfor %}</div>
+  <div class="tellrow"><input type="text" id="libsearch" placeholder="Search by title (e.g. bench, spoons)" oninput="libFilter()">
+    <label class="src" style="font-weight:400"><input type="checkbox" id="libold" onchange="libFilter()"> show superseded versions</label></div>
+  <div class="lib">
+  {% for d in library.docs %}
+    <div class="libitem" data-name="{{ d.name|lower }} {{ d.folder|lower }}" data-state="{{ d.state }}" data-area="{{ area_of(d.folder) }}" {{ 'hidden' if d.state == 'superseded' or loop.index > 40 }}>
+      <div><strong>{{ d.name }}</strong> {% if d.state == 'current' %}<span class="tag">current</span>{% elif d.state == 'superseded' %}<span class="tag warn">superseded</span>{% endif %}
+        <div class="src">{{ area_of(d.folder) }} · changed {{ d.modified }}</div></div>
+      <div class="switch"><a class="btn" href="{{ d.link }}" target="_blank" rel="noopener">Open to edit &#8599;</a>
+        {% if d.gdoc %}<a class="btn quiet" href="/writing?doc={{ d.id }}&edit=1">Edit here</a>{% endif %}</div>
+    </div>
+  {% endfor %}
+  </div>
+  <p class="src" id="libmore">Showing the 40 most recently changed. Search to find the rest.</p>
+</div>
+
+<h2 id="studio">Document studio</h2>
+{% if open_doc %}<p><strong>Open now:</strong> {{ open_doc[0] }} · <a href="{{ open_link }}" target="_blank" rel="noopener">open it in Google Docs to edit directly &#8599;</a></p>{% endif %}
+<div class="card" data-tour="studio">
+  <form method="get" action="/writing" class="tellrow"><input type="hidden" name="edit" value="1"><label>Open a document to work in<select name="doc" onchange="this.form.submit()">
+    {% for area, ds in groups %}<optgroup label="{{ area }}">{% for d in ds %}<option value="{{ d.id }}" {{ 'selected' if d.id == doc_id }}>{{ d.name[:100] }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+    <noscript><button>Open</button></noscript></form>
+  {% if studio_error %}<p class="src">Couldn't read this document: {{ studio_error }}</p>{% endif %}
+  <p class="src">{{ sections|sum(attribute='words') }} words in the document. Click a section to write in it. Your drafts save here (and in backups), and each saved change goes as an instruction to the agent on duty, who makes it in the Google Doc on their next check.</p>
+  {% for s in sections %}
+  <details class="studio"><summary>{{ s.title }} <span class="src">{{ s.words }} words{% if s.draft %} · your draft: {{ s.draft.split()|length }} words{% else %}{% if not s.words %} · empty{% endif %}{% endif %}</span></summary>
+    {% if s.text %}<details><summary class="src">What's in the doc now</summary><div class="srcbox" style="white-space:pre-wrap">{{ s.text }}</div></details>{% endif %}
+    <form method="post" action="/act/studio-save">
+      <input type="hidden" name="doc" value="{{ doc_id }}"><input type="hidden" name="section" value="{{ s.title }}">
+      <div class="tellrow"><textarea name="text" id="st-{{ loop.index }}" style="min-height:10rem">{{ s.draft or s.text }}</textarea>
+        <button type="button" class="quiet" onclick="speakInto('st-{{ loop.index }}', this)">🎤 Speak</button></div>
+      <p><button>Save</button> <span class="src">Saves this section of "{{ open_doc[0] if open_doc }}" and sends it to {{ duty.passes }} to make in the Google Doc.</span></p>
+    </form>
+  </details>{% endfor %}
+</div>
+
+<h2 id="queue">Publishing queue</h2>
+<div class="card" data-tour="queue">
+  {% set q = w.get('queue', []) %}
+  <div class="switch" id="qfilter">{% for p in ['All'] + qplatforms %}<button type="button" class="{{ '' if p=='All' else 'quiet' }}" onclick="qFilter(this,'{{ p }}')">{{ p }}</button>{% endfor %}</div>
+  <form method="post" action="/act/queue" class="tellrow">
+    <input type="text" name="title" placeholder="Title of the piece..." required style="flex:2">
+    <select name="platform">{% for p in qplatforms %}<option>{{ p }}</option>{% endfor %}</select>
+    <select name="category">{% for c in cats %}<option>{{ c }}</option>{% endfor %}</select>
+    <button>Queue</button></form>
+  {% for r in q %}
+  <div class="note qitem" data-platform="{{ r.Owner }}"><strong>{{ r.Item }}</strong> <span class="tag">{{ r.Owner }}</span> <span class="tag">{{ r.Due }}</span>
+    <form method="post" action="/act/queue" style="display:inline"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="{{ r.ID }}">
+      <select name="status" aria-label="Status">{% for s in qstatuses %}<option {{ 'selected' if s == r.Status }}>{{ s }}</option>{% endfor %}</select>
+      <button class="quiet">Save</button></form>
+    <span class="src">{{ r.Source }}</span></div>
+  {% endfor %}
+  <p class="src">{% for s in qstatuses %}{{ s }}: {{ q|selectattr('Status','equalto',s)|list|length }}{{ ' · ' if not loop.last }}{% endfor %}</p>
+</div>
+
+<h2 id="shipped">What shipped</h2>
+<div class="card">
+<ul>{% for r in w.get('shipped', [])|sort(attribute='Due', reverse=True) %}<li><strong>{{ r.Due }}</strong> {{ r.Item }} <span class="src">({{ r.Source }})</span></li>{% endfor %}</ul>
+<form method="post" action="/act/shipped" class="tellrow"><input type="date" name="date"><input type="text" name="what" placeholder="What shipped?" style="flex:2" required><button>Add</button></form>
+</div>
+
+<h2>Figures never to print</h2>
+<div class="card"><ul>{% for r in w.get('never print', []) %}<li>{{ r.Item }} <span class="src">({{ r.Source }}, {{ r['As of'] }})</span></li>{% endfor %}</ul></div>
+
+<style>
+.ed-back { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: flex;
+  align-items: flex-start; justify-content: center; padding: 3vh 16px; overflow-y: auto; }
+.ed-back[hidden] { display: none; }
+.ed-box { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
+  width: 100%; max-width: 52rem; padding: 1rem 1.25rem; box-sizing: border-box; }
+.ed-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap;
+  position: sticky; top: -3vh; background: var(--panel); padding: .5rem 0; z-index: 1; }
+.ed-body h3 { margin: 1.25rem 0 .35rem; }
+.ed-body textarea { width: 100%; box-sizing: border-box; min-height: 6rem; font: inherit; line-height: 1.55;
+  resize: vertical; }
+.ed-changed { color: var(--amber); }
+.ed-click { cursor: pointer; }
+</style>
+<script>
+const ED = { doc: {{ working_doc|tojson }}, to: {{ duty_to|tojson }}, mode: '', item: null, link: '',
+             timers: {}, touched: {}, last: {}, poll: null };
+const ED_HELP = {
+  doc: "Type straight in; your words are kept safe as you go. Press Save to send your changes to the agent you picked, who makes them in the Google Doc on their next check. The document re-reads itself every minute, so you'll see the edit land.",
+  capture: "Type straight in; your words are kept safe as you go. Press Save to keep this version as your capture. If it's already approved, Save also sends it to the agent you picked.",
+  draft: "Type straight in; your words are kept safe as you go. Press Save to send your edited draft to the agent you picked, who uses it word for word."
+};
+function edTo(btn, a){
+  document.querySelectorAll('#ed-to button').forEach(b => b.className = 'quiet'); btn.className = '';
+  ED.to = a;
+}
+function edReset(mode){
+  Object.values(ED.timers).forEach(clearTimeout);
+  Object.assign(ED, { mode: mode, timers: {}, touched: {}, last: {} });
+  document.getElementById('ed-body').innerHTML = '';
+  document.getElementById('ed-status').textContent = 'Loading…';
+  document.getElementById('ed-gdoc').hidden = mode !== 'doc';
+  clearInterval(ED.poll); ED.poll = null;
+}
+function edOpen(){
+  if (!ED.doc) return;
+  if (ED.mode !== 'doc') edReset('doc');
+  document.getElementById('ed-help').textContent = ED_HELP.doc;
+  document.getElementById('ed').hidden = false;
+  try { sessionStorage.removeItem('edClosed'); } catch(e) {}
+  edLoad();
+  if (!ED.poll) ED.poll = setInterval(edLoad, 60000);
+}
+function edOpenItem(id){
+  edReset('item'); ED.item = id;
+  document.getElementById('ed').hidden = false;
+  fetch('/studio/item?id=' + encodeURIComponent(id)).then(r => r.json()).then(d => {
+    if (d.error) { document.getElementById('ed-status').textContent = "Couldn't open this one."; return; }
+    document.getElementById('ed-kind').textContent = d.kind === 'capture' ? 'Capture' : 'Draft waiting on you';
+    document.getElementById('ed-name').textContent = d.name;
+    document.getElementById('ed-where').textContent = d.where;
+    document.getElementById('ed-help').textContent = ED_HELP[d.kind];
+    const body = document.getElementById('ed-body');
+    const note = document.createElement('div'); note.className = 'src ed-changed'; note.textContent = d.note;
+    const t = document.createElement('textarea'); t.id = 'ed-item'; t.value = d.text;
+    t.setAttribute('aria-label', d.where);
+    t.addEventListener('input', () => { ED.touched[t.id] = true; edGrow(t); edSave(t); });
+    body.append(note, t); edGrow(t); t.focus();
+    document.getElementById('ed-status').textContent = d.status ? 'Status: ' + d.status + '.' : '';
+  }).catch(() => { document.getElementById('ed-status').textContent = "Couldn't reach the app just now."; });
+}
+function edClose(){
+  document.getElementById('ed').hidden = true;
+  clearInterval(ED.poll); ED.poll = null;
+  if (ED.mode === 'doc') { try { sessionStorage.setItem('edClosed', ED.doc); } catch(e) {} }
+}
+function edGdoc(){ window.open(ED.link, 'omsgdoc', 'width=900,height=1000'); }
+function edGrow(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight + 4) + 'px'; }
+function edLoad(){
+  const st = document.getElementById('ed-status');
+  fetch('/studio/live?doc=' + encodeURIComponent(ED.doc)).then(r => r.json()).then(d => {
+    if (d.error) { st.textContent = "Couldn't re-read the document just now; your words are safe. (" + d.error + ")"; return; }
+    ED.link = d.link;
+    document.getElementById('ed-kind').textContent = 'Document';
+    document.getElementById('ed-name').textContent = d.name;
+    document.getElementById('ed-where').textContent = d.sections.length + ' section' + (d.sections.length === 1 ? '' : 's') + ' · Google Doc';
+    const body = document.getElementById('ed-body');
+    d.sections.forEach((s, i) => {
+      const id = 'ed-s' + i;
+      let t = document.getElementById(id);
+      if (!t) {
+        const h = document.createElement('h3'); h.textContent = s.title;
+        const loc = document.createElement('div'); loc.className = 'src';
+        loc.textContent = 'Section ' + (i + 1) + ' of ' + d.sections.length + ' in "' + d.name + '"';
+        const note = document.createElement('div'); note.className = 'src ed-changed'; note.id = id + '-n';
+        t = document.createElement('textarea'); t.id = id; t.dataset.section = s.title;
+        t.setAttribute('aria-label', s.title + ', in ' + d.name);
+        t.value = s.draft || s.text;
+        t.addEventListener('input', () => { ED.touched[id] = true; edGrow(t); edSave(t); });
+        body.append(h, loc, note, t);
+      } else if (!ED.touched[id] && !s.draft) {
+        t.value = s.text;                       // untouched: keep showing what's in the doc now
+      } else if (ED.last[id] !== undefined && ED.last[id] !== s.text) {
+        document.getElementById(id + '-n').textContent =
+          'The Google Doc changed in this part since you started. Your words here are kept.';
+      }
+      ED.last[id] = s.text;
+      edGrow(t);
+    });
+    st.textContent = 'Read from Google Docs at ' + d.read_at + '.';
+  }).catch(() => { st.textContent = "Couldn't reach the app just now; your words are safe."; });
+}
+function edPost(t, send){
+  // one textarea, kept safe (send=false) or saved and sent (send=true)
+  const url = ED.mode === 'doc' ? '/studio/autosave' : '/studio/item-save';
+  const body = ED.mode === 'doc'
+    ? { doc: ED.doc, section: t.dataset.section, text: t.value, to: ED.to, send: send }
+    : { id: ED.item, text: t.value, to: ED.to, send: send };
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function edSave(t){
+  clearTimeout(ED.timers[t.id]);
+  ED.timers[t.id] = setTimeout(() => {
+    edPost(t, false).then(d => { document.getElementById('ed-status').textContent =
+        'Kept safe at ' + d.saved_at + '. Press Save when you are ready.'; })
+      .catch(() => { document.getElementById('ed-status').textContent = 'Not kept yet; it will try again when you type.'; });
+  }, 2000);
+}
+function edSaveAll(){
+  const st = document.getElementById('ed-status');
+  const ts = Object.keys(ED.touched).map(id => document.getElementById(id)).filter(Boolean);
+  if (!ts.length) { st.textContent = 'Nothing changed yet.'; return; }
+  ts.forEach(t => clearTimeout(ED.timers[t.id]));
+  st.textContent = 'Saving…';
+  Promise.all(ts.map(t => edPost(t, true))).then(rs => {
+    const reqs = [...new Set(rs.map(d => d.request).filter(Boolean))];
+    const what = ED.mode === 'doc'
+      ? ts.length + ' changed section' + (ts.length === 1 ? '' : 's') + ' of "' + document.getElementById('ed-name').textContent + '"'
+      : document.getElementById('ed-where').textContent.split(' · ')[0];
+    st.textContent = 'Saved at ' + rs[0].saved_at + ': ' + what + '.' +
+      (reqs.length ? ' Sent to ' + ED.to + ' (' + reqs.join(', ') + '); they make it on their next check.' : '');
+  }).catch(() => { st.textContent = "Not saved: couldn't reach the app. Your words are still here; press Save again."; });
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('ed').hidden) edClose(); });
+{% if working_doc %}
+(function(){
+  let closed = null; try { closed = sessionStorage.getItem('edClosed'); } catch(e) {}
+  // a document he just picked always opens; otherwise it pops up unless he closed it this visit
+  if ({{ 'true' if request.args.get('edit') else 'false' }} || closed !== ED.doc) edOpen();
+})();
+{% endif %}
+let libAreaSel = '';
+function libArea(btn, a){
+  document.querySelectorAll('#libareas button').forEach(b=>b.className='quiet'); btn.className='';
+  libAreaSel = a; libFilter();
+}
+function libFilter(){
+  const q = document.getElementById('libsearch').value.trim().toLowerCase();
+  const old = document.getElementById('libold').checked;
+  let shown = 0;
+  document.querySelectorAll('.libitem').forEach(el=>{
+    const ok = (!q || el.dataset.name.includes(q)) && (old || el.dataset.state !== 'superseded')
+      && (!libAreaSel || el.dataset.area === libAreaSel);
+    el.hidden = !ok || (!q && !libAreaSel && shown >= 40); if(!el.hidden) shown++;
+  });
+  document.getElementById('libmore').hidden = !!q || !!libAreaSel;
+}
+function capDoc(v){
+  const isNew = v === 'new';
+  document.getElementById('captitle-l').hidden = !isNew;
+  document.getElementById('capsec-l').hidden = isNew;
+  if (!isNew) loadSections(v);
+}
+function loadSections(doc){
+  fetch('/studio/sections?doc='+encodeURIComponent(doc)).then(r=>r.json()).then(list=>{
+    const s = document.getElementById('capsec'); s.innerHTML='';
+    list.forEach(t=>{const o=document.createElement('option'); o.textContent=t; s.appendChild(o);});
+  });
+}
+function qFilter(btn, p){
+  document.querySelectorAll('#qfilter button').forEach(b=>b.className='quiet'); btn.className='';
+  document.querySelectorAll('.qitem').forEach(el=>{ el.style.display = (p==='All' || el.dataset.platform===p) ? '' : 'none'; });
+}
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){btn.textContent='Speaking not available';return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤 Speak'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■ Stop'; btn.onclick = () => r.stop(); r.start();
+}
+</script>
+{% endblock %}

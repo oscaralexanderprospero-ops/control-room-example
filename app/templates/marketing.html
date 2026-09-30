@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block body %}
+{% macro item(r, show_when) %}
+<div class="card" id="{{ r.ID }}">
+  <div class="plathead"><input type="checkbox" class="bulkpick" data-group="marketing" value="{{ r.ID }}" aria-label="Select {{ r.Title }}"><strong>{{ r.Title }}</strong> <span class="tag">{{ r.Kind }}</span>
+    <span class="src">{{ r.Start or 'no start date' }}{% if r.End and r.End != r.Start %} to {{ r.End }}{% endif %}{% if r.days_to is defined %} · in {{ r.days_to }} days{% endif %}</span>
+    {% if r.prep_by %}<span class="src">· get ready by {{ r.prep_by }}</span>{% endif %}
+    {% if r.prep_late %}<span class="tag bad">get ready now</span>{% endif %}
+    {{ status_form(r) }}</div>
+  <div><strong>Why it's here:</strong> {{ r["Why it's here"] or '(no reason given: add one or drop it)' }}</div>
+  {% if r.Platforms %}<div class="src">Listings / platforms: {{ r.Platforms }}</div>{% endif %}
+  {% if r.Details %}<div style="white-space:pre-wrap">{{ r.Details }}</div>{% endif %}
+  <div class="switch">
+    <form method="post" action="/act/marketing"><input type="hidden" name="op" value="hand"><input type="hidden" name="id" value="{{ r.ID }}"><button class="quiet">Hand it over</button></form>
+    <form method="post" action="/act/marketing"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="{{ r.ID }}"><input type="hidden" name="status" value="Dropped"><button class="quiet">Drop it</button></form>
+  </div>
+  <details><summary>Edit</summary>
+    <form method="post" action="/act/marketing" class="lugrid">
+      <input type="hidden" name="op" value="edit"><input type="hidden" name="id" value="{{ r.ID }}">
+      <label>Name<input type="text" name="Title" value="{{ r.Title }}"></label>
+      <label>Starts<input type="date" name="Start" value="{{ r.Start }}"></label>
+      <label>Ends<input type="date" name="End" value="{{ r.End }}"></label>
+      <label>Listings / platforms<input type="text" name="Platforms" value="{{ r.Platforms }}"></label>
+      <label class="wide">Why it's here<input type="text" name="Why it's here" value="{{ r["Why it's here"] }}"></label>
+      <label class="wide">Details<div class="tellrow"><textarea name="Details" id="mk-{{ r.ID }}">{{ r.Details }}</textarea>
+        <button type="button" class="quiet" onclick="speakInto('mk-{{ r.ID }}', this)">🎤</button></div></label>
+      <div class="wide"><button>Save changes</button></div>
+    </form></details>
+</div>
+{% endmacro %}
+<h1 data-tour="mk-title">Marketing</h1>
+<p class="lead">Sales, seasonal SEO changes, campaigns and ideas, and the seasons they hang on. Every item says why it's here. "Hand it over" sends it to {{ duty.passes }} to prepare as drafts for your Inbox; nothing goes live without your click.</p>
+
+<section class="card" id="add" data-tour="mk-add">
+  <h2 style="margin-top:0">Add something</h2>
+  <form method="post" action="/act/marketing" class="lugrid">
+    <input type="hidden" name="op" value="add">
+    <label>What kind<select name="kind">
+      <option value="Sale">A sale or coupon</option><option value="SEO change">A seasonal SEO change (titles, tags, photos)</option>
+      <option value="Campaign">A campaign (posts, a gift guide, a launch)</option><option value="Idea">An idea for later</option>
+      <option value="Season">A date or season to plan around</option></select></label>
+    <label>Name it<input type="text" name="title" required placeholder="e.g. Samhain 20% off wands"></label>
+    <label>Starts<input type="date" name="start"></label>
+    <label>Ends (or switch back on)<input type="date" name="end"></label>
+    <label>Which listings or platforms<input type="text" name="platforms" placeholder="e.g. all wands; Etsy and Facebook"></label>
+    <label>Why it matters<input type="text" name="why" placeholder="Your reason (optional)"></label>
+    <label class="wide">Details, in your words (discount, which pieces, what to change)
+      <div class="tellrow"><textarea name="details" id="mk-new"></textarea>
+      <button type="button" class="quiet" onclick="speakInto('mk-new', this)">🎤 Speak</button></div></label>
+    <div class="wide"><button>Add it</button></div>
+  </form>
+</section>
+
+<div class="bulkbar" data-group="marketing">
+  <label><input type="checkbox" class="bulkall"> Select all</label> <span class="src bulkcount"></span>
+  <button type="button" data-op="marketing-hand" data-confirm="Hand the {n} selected items to {{ duty.passes }} to prepare as drafts for your Inbox?">Hand selected over</button>
+</div>
+<h2>Coming up</h2>
+<p class="src">"Get ready by" is {{ lead_days }} days ahead: time to change titles and tags, take photos and schedule posts before the day.</p>
+{% for r in upcoming %}{{ item(r, true) }}{% endfor %}
+
+{% for k in kinds %}
+{% set rows = by.get(k, []) %}
+{% if k != 'Season' %}
+<h2 id="{{ k }}">{{ {'Sale':'Sales','SEO change':'Seasonal SEO changes','Campaign':'Campaigns','Idea':'Ideas'}[k] }}</h2>
+{% for r in rows %}{% if r not in upcoming %}{{ item(r, false) }}{% endif %}{% else %}<p class="src">None yet. Use "Add something" above.</p>{% endfor %}
+{% else %}
+{# past seasons drop off; a season with no start date would otherwise never show #}
+{% set undated = rows|rejectattr('start_d')|list %}
+{% if undated %}<h2 id="Season">Seasons with no date yet</h2>{% for r in undated %}{{ item(r, false) }}{% endfor %}{% endif %}
+{% endif %}
+{% endfor %}
+
+
+
+<script>
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤 Speak'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■ Stop'; btn.onclick = () => r.stop(); r.start();
+}
+</script>
+{% endblock %}

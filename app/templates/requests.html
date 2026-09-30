@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>What you've told the team</h1>
+<p class="lead">Every instruction you give, in your own words, with who it went to and what happened.</p>
+{% for r in reqs %}
+<div class="card">
+  <div><strong>{{ r.ID }}</strong> · {{ r['When (Central)'] }} · for {{ r.For }} · {{ r.About }}
+    <span class="tag {{ 'warn' if r.Status in ('open','needs Sam') else '' }}">{{ r.Status }}</span></div>
+  <p style="white-space:pre-wrap">{{ r['His words (verbatim)'] }}</p>
+  {% if r.Result %}<div><strong>Result:</strong> {{ r.Result }} <span class="src">{{ r.Updated }}</span></div>{% endif %}
+</div>
+{% else %}<p>Nothing yet. Use "Tell the team" at the top of any screen.</p>{% endfor %}
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Today</h1>
+<p class="lead">What's queued, what went out today, and how many more each platform can take.</p>
+{% if inbox_count or blocked_count %}
+<div class="notice warn">{% if inbox_count %}<a href="/inbox">{{ inbox_count }} draft{{ 's' if inbox_count > 1 }} waiting in your Inbox</a>{% endif %}{% if inbox_count and blocked_count %} · {% endif %}{% if blocked_count %}<a href="/blocked">{{ blocked_count }} thing{{ 's' if blocked_count > 1 }} blocked on you, each with its fix</a>{% endif %}</div>
+{% endif %}
+
+<h2>Due today</h2>
+<div class="card" data-tour="due">
+  {% for d in due %}
+  <div class="note" style="{{ 'border-left-color:var(--rust)' if d.overdue }}"><span class="tag {{ 'bad' if d.overdue else 'warn' }}">{{ d.when }}</span>
+    <span class="tag">{{ d.kind }}</span> <a href="{{ d.link }}">{{ d.what }}</a></div>
+  {% else %}<p>Nothing is due today or overdue.</p>{% endfor %}
+  <p class="src">Worked out fresh from the dates each time the page loads: orders and messages, custom orders, writing, and posts whose time has come.</p>
+</div>
+
+<h2>The next 7 days</h2>
+<div class="cal">{% for d in calendar %}
+  <div class="calday"><strong>{{ d.date.strftime('%a') }}</strong> <span class="src">{{ d.date.strftime('%d %b') }}</span>
+    {% for it in d['items'] %}<div class="calitem"><span class="tag">{{ it.kind }}</span> {{ it.text }}</div>{% else %}<div class="src">nothing set</div>{% endfor %}
+  </div>{% endfor %}</div>
+<p class="src">Scheduled posts, writing due dates, marketing dates, order and custom-order deadlines, and the weekly and monthly passes.</p>
+
+<h2>Posts left today, by platform</h2>
+<p class="src">Counted from the Posts tab. Ceilings come from KIMI PROCEDURE 01 and your own rulings; each card names its source. A blank ceiling means no sourced number exists. Floor: one hour between posts to the same platform, 88 minutes preferred.
+<form method="post" action="/act/recheck" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Check the platforms now</button></form></p>
+<div class="pace" data-tour="pace">
+{% for p in pace %}
+  <div class="card">
+    <div><strong>{{ p.platform }}</strong>
+      {% if p.over %}<span class="tag bad">over</span>{% endif %}</div>
+    <div class="num">{{ p.left if p.left is not none else '' }}{% if p.left is not none %} <span class="src">left</span>{% endif %}</div>
+    <div>{{ p.count }} today{% if p.ceiling is not none %} of {{ p.ceiling }}{% endif %}
+      {% if p.scheduled %}<span class="src">({{ p.scheduled }} scheduled)</span>{% endif %}</div>
+    {% if p.last %}<div class="src">Last: {{ p.last }}</div>{% endif %}
+    {% if p.upcoming %}<div class="src">Coming: {{ p.upcoming|join(', ') }}</div>{% endif %}
+    <div class="src">Next allowed: {{ p.next_ok }}{% if p.next_pref %} (best {{ p.next_pref }}){% endif %}</div>
+    {% if p.week_target %}<div class="src">This week: {{ p.week }} of {{ p.week_target }}{% if p.week < p.week_target %} <span class="tag warn">behind</span>{% endif %}<br>{{ p.week_note }}</div>{% endif %}
+    {% if p.flag %}<div class="src"><span class="tag warn">check</span> {{ p.flag }}</div>{% endif %}
+    {% if p.note %}<div class="src">{{ p.note }}</div>{% endif %}
+    {% if p.over %}<div class="src"><a href="/blocked">Fix: see Blocked on you</a></div>{% endif %}
+    <div class="src">Source: {{ p.source }}</div>
+  </div>
+{% endfor %}
+</div>
+
+<h2>What went out today</h2>
+{% if posts %}
+<div class="wrap"><table>
+<tr><th>Time</th><th>Platform</th><th>Item</th><th>State</th><th>By</th><th>Source</th></tr>
+{% for p in posts %}
+<tr><td>{{ p['Time (Central)'] or '—' }}</td><td>{{ p.Platform }}</td>
+<td>{% if p.URL %}<a href="{{ p.URL }}" target="_blank">{{ p.Item }}</a>{% else %}{{ p.Item }}{% endif %}</td>
+<td>{% if p.State == 'scheduled' %}<span class="tag warn">scheduled</span>{% else %}<span class="tag">live</span>{% endif %}</td>
+<td>{{ p['Posted by'] }}</td><td class="src">{{ p.Source }}</td></tr>
+{% endfor %}
+</table></div>
+{% else %}<p>Nothing recorded yet today.</p>{% endif %}
+
+<h2>The queue</h2>
+<div class="wrap" data-tour="queue"><table>
+<tr><th>Item</th><th>Platforms left</th><th>Status</th><th>Notes</th><th>Source</th></tr>
+{% for q in queue %}
+<tr>
+<td><strong>{{ q.ID }}</strong> {{ q.Piece }}<div class="src">{{ q.File }}</div></td>
+<td>{{ q['Platforms left'] }}</td>
+<td><span class="tag {{ 'warn' if q.Status in ('unclear','held','needs his phone','sent back') else '' }}">{{ q.Status }}</span>
+  {% if q['Claimed by'] %}<div class="src">Claimed: {{ q['Claimed by'] }}</div>{% endif %}</td>
+<td>{% if 'today' in (q.Notes or '').lower() and before_today(q['As of']) %}<span class="tag warn">old note</span>
+  <span class="src">written {{ q['As of'] }}, so its "today" means that day:</span><br>{% endif %}{{ q.Notes }}</td>
+<td class="src">{{ q.Source }}<br>as of {{ q['As of'] }}{% if stale(q['As of']) %}<span class="stale">STALE</span>
+  <form method="post" action="/act/still-true"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="{{ q.ID }}">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form>{% endif %}</td>
+</tr>
+{% endfor %}
+</table></div>
+<p class="src">Things the import couldn't settle are now in <a href="/blocked">Blocked on you</a>, each with buttons to answer or hand to an agent.</p>
+{% endblock %}

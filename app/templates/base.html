@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="/static/style.css">
+</head><body data-page="{{ page }}">
+<header class="top{{ ' open' if request.args.get('done') == 'told' }}">
+  <span class="brand">Control Room</span>
+  <span class="src">{{ today_str }} Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="/plan" class="{{ 'on' if page=='plan' }}" data-tour="nav-plan">My day</a>
+    <a href="/" class="{{ 'on' if page=='today' }}">Today</a>
+    <a href="/inbox" class="{{ 'on' if page=='inbox' }}" data-tour="nav-inbox">Inbox{% if inbox_count %}<span class="n">{{ inbox_count }}</span>{% endif %}</a>
+    <a href="/post" class="{{ 'on' if page=='post' }}" data-tour="nav-post">Post</a>
+    <a href="/blocked" class="{{ 'on' if page=='blocked' }}" data-tour="nav-blocked">Blocked on you{% if blocked_count %}<span class="n">{{ blocked_count }}</span>{% endif %}</a>
+    <a href="/business" class="{{ 'on' if page=='business' }}" data-tour="nav-business">Business{% if biz_due %}<span class="n">{{ biz_due }}</span>{% endif %}</a>
+    <a href="/requests" class="{{ 'on' if page=='requests' }}">Told the team{% if open_requests %}<span class="n soft">{{ open_requests }}</span>{% endif %}</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="/writing" class="{{ 'on' if page=='writing' }}" data-tour="nav-writing">Writing</a>
+    <a href="/media" class="{{ 'on' if page=='media' }}">Video and photo</a>
+    <a href="/shop" class="{{ 'on' if page=='shop' }}">Listings</a>
+    <a href="/marketing" class="{{ 'on' if page=='marketing' }}" data-tour="nav-marketing">Marketing</a>
+    <a href="/stats" class="{{ 'on' if page=='stats' }}">Stats and SEO</a>
+    <a href="/public" class="{{ 'on' if page=='public' }}">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="/duty" class="{{ 'on' if page=='duty' }}" data-tour="nav-duty">Who's on duty</a>
+    <a href="/team" class="{{ 'on' if page=='team' }}" data-tour="nav-team">Team table</a>
+    <a href="/skills" class="{{ 'on' if page=='skills' }}" data-tour="nav-skills">Skills</a>
+    <a href="/reviews" class="{{ 'on' if page=='reviews' }}">Reviews</a>
+    <a href="/files" class="{{ 'on' if page=='files' }}" data-tour="nav-files">Files</a>
+    <a href="/ward" class="{{ 'on' if page=='ward' }}" data-tour="nav-ward">The Ward{% if sus_count %}<span class="n">{{ sus_count }}</span>{% endif %}</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light {{ 'ok' if defender.ok else 'bad' }}"></span>{{ 'Defender on' if defender.ok else 'Defender needs you' }}
+      {% if not defender.ok %}<a class="btn quiet" href="windowsdefender://threatsettings">Open Windows Security</a>{% endif %}</span>
+    <span>Passes: <strong>{{ duty.passes or '—' }}</strong> · Review: <strong>{{ duty.review or '—' }}</strong></span>
+    <span>
+      {% if rec.connected %}<span class="light ok"></span>Sheet synced {{ rec.pulled_at or '' }}
+      {% else %}<span class="light bad"></span>Not linked to the Sheet
+        <form method="post" action="/act/google-connect" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>{% endif %}
+      {% if rec.pending %} · {{ rec.pending }} changes waiting to send{% endif %}
+    </span>
+    <form method="post" action="/act/refresh" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    {% if rec.sheet_url %}<a href="{{ rec.sheet_url }}" target="_blank">Open the Sheet</a>{% endif %}
+  </div>
+  <details class="tell" data-tour="tell" {{ 'open' if request.args.get('done') == 'told' }}>
+    <summary>Tell the team</summary>
+    {% if request.args.get('done') == 'told' %}<div class="notice">Sent to {{ request.args.get('to') or duty.passes }} and logged in your own words. <a href="/requests">See it</a></div>{% endif %}
+    <form method="post" action="/act/tell">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty ({{ duty.passes }})</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+{% if now_task and page != 'plan' %}<a class="nowbar{{ ' urgent' if now_urgent }}" href="/plan#now">{{ 'Needs you now:' if now_urgent else 'Now:' }} <strong>{{ now_task }}</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>{% endif %}
+{% if request.args.get('done') == 'bulk' %}<div class="notice">Done for {{ request.args.get('n') }} selected item{{ '' if request.args.get('n') == '1' else 's' }}, and logged.</div>{% endif %}
+{% if request.args.get('done') == 'skill' %}<div class="notice">Sent to {{ request.args.get('to') }} ({{ request.args.get('sid') }}), with the details. {{ 'Claude runs your plug-in skill on its next check.' if request.args.get('to') == 'Claude' else '' }} <a href="/requests">See it</a></div>{% endif %}
+{% if request.args.get('done') == 'google-started' %}<div class="notice">A Google page has opened in your browser. Choose your account and click Continue, then Allow.</div>{% endif %}
+{% if request.args.get('done') == 'no-client' %}<div class="notice warn">The Control Room's Google app ID isn't on the laptop. Tell Claude in "Tell the team".</div>{% endif %}
+{% block body %}{% endblock %}
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="/static/app.js"></script>
+</body></html>

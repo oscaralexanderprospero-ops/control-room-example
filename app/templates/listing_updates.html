@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% from "_skill.html" import skill_button with context %}
+{% block body %}
+<h1 data-tour="lu-title">Listings that need updating</h1>
+<p class="lead">Every listing with anything missing or wrong: {{ open_n }} still open. Open one, fill in what you know (type or speak), and press Save. "Save and hand it over" sends it to {{ duty.passes }} to put on Etsy. Live listings stop at Etsy's edit screen for your Save click, and drafts stay drafts.</p>
+{% if request.args.get('done') == 'saved' %}<div class="notice">{% if request.args.get('n') == '0' %}Nothing had changed, so nothing was saved.{% else %}Saved to your Sheet{% if request.args.get('n') %}: {{ request.args.get('n') }} listing{{ '' if request.args.get('n') == '1' else 's' }}{% endif %}.{% endif %}</div>{% endif %}
+<p class="src">One Save saves every listing you've changed on this page. The only measurements that matter: height (most important), thickness, and weight on canes and staves.</p>
+
+<div class="switch" id="lufilter" data-tour="lu-filter">
+  <button type="button" onclick="luFilter(this,'')">All ({{ open_n }})</button>
+  {% for k, n in counts.items() %}<button type="button" class="quiet" onclick="luFilter(this,'{{ k }}')">{{ k }} ({{ n }})</button>{% endfor %}
+  <button type="button" class="quiet" onclick="luFilter(this,'__done')">Done</button>
+</div>
+<p class="src">Sources: Missing Specifications Tracker (15 Aug), Etsy Claims Sweep (17 Aug), Master Tracker (17 Sep), shop ledger (27 Sep). Only what's confirmed missing is asked for: a blank the tracker left ("not yet measured"), or a note saying UNKNOWN or MEASURE. Listings with nothing confirmed missing are left off.</p>
+
+<div class="bulkbar" data-group="listings">
+  <label><input type="checkbox" class="bulkall"> Select all showing</label> <span class="src bulkcount"></span>
+  <button type="button" data-op="listing-handover" data-confirm="Hand the {n} selected listings to {{ duty.passes }} to update on Etsy? Save your changes first; live listings stop at Etsy's edit screen for your Save.">Hand selected over</button>
+</div>
+{% for r in rows %}
+{% set miss = missing_fields(r) %}{% set nd = needs(r) %}
+<details class="card lu" data-needs="{{ nd|join('; ') }}" data-status="{{ r.Status }}" {{ 'hidden' if r.Status == 'done' or not nd }}>
+  <summary>{% if has_photo(r['Listing ID']) %}<img class="lthumb" src="/listing-photo/{{ r['Listing ID'] }}" alt="Main photo of {{ r.Piece }}" loading="lazy">{% else %}<span class="lthumb nophoto">no photo{% if r['Active or Draft'] == 'Draft' %} (draft){% endif %}</span>{% endif %}
+    <input type="checkbox" class="bulkpick" data-group="listings" value="{{ r['Listing ID'] }}" aria-label="Select {{ r.Piece }}" onclick="event.stopPropagation()">
+    <strong>{{ r.Piece or r['Listing ID'] }}</strong>
+    <span class="src">{{ r['Listing ID'] }} · {{ r['Active or Draft'] }}</span>
+    {% for n in nd %}<span class="tag {{ 'bad' if 'wording' in n or 'Policy' in n else 'warn' }}">{{ n }}</span>{% endfor %}
+    {% if r.Status != 'open' %}<span class="tag">{{ r.Status }}</span>{% endif %}
+    {% if stale(r['As of']) %}<span class="stale">STALE</span>{% endif %}</summary>
+  <div class="src" style="margin:.5rem 0">{% for d in r.Detail.split(' | ') if not d.startswith('Missing or unverified') %}<div>• {{ d }}</div>{% endfor %}
+    {% if miss %}<div>• Confirmed missing: <strong>{{ miss|join(', ')|lower }}</strong></div>{% endif %}</div>
+  {% if (r['Listing ID'] or 'x')[0] in '0123456789' %}<a class="btn quiet" href="https://www.etsy.com/your/shops/me/listing-editor/edit/{{ r['Listing ID'] }}" target="_blank">Open on Etsy &#8599;</a>{% endif %}
+  <form method="post" action="/act/listing-update" class="lugrid luform" data-id="{{ r['Listing ID'] }}" onsubmit="return luSubmit(this, event)">
+    <input type="hidden" name="id" value="{{ r['Listing ID'] }}">
+    {% for f in miss %}<label>{% if f == 'Height' %}Height <span class="src">(most important)</span>{% elif f == 'Weight' %}Weight <span class="src">(canes and staves)</span>{% else %}{{ f }}{% endif %}
+      <input type="text" name="{{ f }}" value="{{ r[f] }}" {% if f == 'Weight' %}placeholder="add once you find your scale"{% endif %}></label>{% endfor %}
+    {% set rec = [] %}{% for f in fields_for(r.Piece) if f not in miss and r[f] %}{% set _ = rec.append(f) %}{% endfor %}
+    {% if rec %}<details class="wide"><summary class="src">Already recorded: {% for f in rec %}{{ f|lower }} {{ r[f] }}{{ '; ' if not loop.last }}{% endfor %} (change one)</summary>
+      <div class="lugrid">{% for f in rec %}<label>{{ f }}<input type="text" name="{{ f }}" value="{{ r[f] }}"></label>{% endfor %}</div></details>{% endif %}
+    <div class="wide src">{% for f in retired if r[f] %}{% if loop.first %}Recorded before (no longer needed): {% endif %}{{ f }} {{ r[f] }}{{ ', ' if not loop.last }}{% endfor %}</div>
+    <label class="wide">Your notes, in your words (wording fixes, what's true about the piece)
+      <div class="tellrow"><textarea name="notes" id="lun-{{ loop.index }}">{{ r['His notes (verbatim)'] }}</textarea>
+      <button type="button" class="quiet" onclick="speakInto('lun-{{ loop.index }}', this)">🎤</button></div></label>
+    <div class="wide switch"><button name="ready" value="">Save all</button>
+      <button class="quiet" name="ready" value="yes">Save all, and hand this one over</button>
+      <button class="quiet" name="done" value="yes">It's done on Etsy</button></div>
+  </form>
+  {% if has_photo(r['Listing ID']) %}<img src="/listing-photo/{{ r['Listing ID'] }}" alt="Main photo of {{ r.Piece }}" style="max-width:min(100%,420px);border-radius:8px;display:block;margin:.4rem 0">{% endif %}
+  {% if (r['Listing ID'] or 'x')[0] in '0123456789' %}
+  <form method="post" action="/act/listing-photo" enctype="multipart/form-data" class="inline-form">
+    <input type="hidden" name="id" value="{{ r['Listing ID'] }}">
+    <label class="src" style="font-weight:400">{{ 'Replace the photo' if has_photo(r['Listing ID']) else 'Add a photo so you can recognise it' }}
+      <input type="file" name="photo" accept="image/*"></label><button class="quiet">Upload</button></form>{% endif %}
+  {{ skill_button('etsy-listing', 'Fix it with the Etsy listing skill', "rewrites or shortens the copy from your notes above and checks the weapon-language and policy wording. Live listings stop at Etsy's edit screen for your Save.", 'listing ' ~ r['Listing ID'] ~ ', ' ~ (r.Piece or '') ~ ', needs: ' ~ r.Needs) }}
+  <div class="src">Source: {{ r.Source }} · as of {{ r['As of'] }}</div>
+</details>
+{% endfor %}
+
+<script>
+// Save on any listing saves every listing he changed on this page.
+function luChanged(f){
+  return [...f.querySelectorAll('input[type=text], textarea')].some(i => i.value !== i.defaultValue);
+}
+function luData(f){
+  const values = {};
+  f.querySelectorAll('input[type=text]').forEach(i => values[i.name] = i.value);
+  return { id: f.dataset.id, values: values, notes: f.querySelector('textarea[name=notes]').value };
+}
+function luSubmit(form, e){
+  const btn = e.submitter;
+  const plainSave = btn && btn.name === 'ready' && btn.value === '';
+  // with "hand over" or "done", this listing still goes through its own button;
+  // every other changed listing is saved first
+  const others = [...document.querySelectorAll('.luform')].filter(f => luChanged(f) && (plainSave || f !== form));
+  if (!others.length && !plainSave) return true;
+  e.preventDefault();
+  fetch('/act/listing-update-all', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ listings: others.map(luData) }) })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => {
+      if (plainSave) { location.href = '/listings/updates?done=saved&n=' + d.saved; return; }
+      const h = document.createElement('input'); h.type = 'hidden'; h.name = btn.name; h.value = btn.value;
+      form.appendChild(h); form.onsubmit = null; form.submit();
+    })
+    .catch(() => alert("Couldn't save just now. Nothing is lost on this page; press Save again."));
+  return false;
+}
+function luFilter(btn, need){
+  document.querySelectorAll('#lufilter button').forEach(b=>b.className='quiet'); btn.className='';
+  document.querySelectorAll('.lu').forEach(el=>{
+    const done = el.dataset.status === 'done';
+    el.hidden = need === '__done' ? !done : (done || (need && !el.dataset.needs.split('; ').includes(need)));
+  });
+}
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■'; btn.onclick = () => r.stop(); r.start();
+}
+</script>
+{% endblock %}

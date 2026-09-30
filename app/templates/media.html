@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% from "_skill.html" import skill_button with context %}
+{% block body %}
+<h1 data-tour="media-title">Video and photo</h1>
+<p class="lead">Every video and photo post from start to finish: get the files, give your words, prep, edit, approve, post and file. Your words are the caption on every platform, word for word; you cut them to fit in your Inbox. Nothing posts without your click.</p>
+{% if request.args.get('err') %}<div class="notice warn">{{ request.args.get('err') }}</div>{% endif %}
+{% if request.args.get('done') == 'start' %}<div class="notice">Started. The files are being prepped; the post lands in your <a href="/inbox">Inbox</a> in a minute or two. Progress is below.</div>{% endif %}
+{% if request.args.get('done') in ('drive','prep','captions') %}<div class="notice">Working on it. Progress is below.</div>{% endif %}
+{% if request.args.get('done') == 'edit' %}<div class="notice">Sent, in your words. <a href="/requests">See it</a></div>{% endif %}
+
+<h2 id="jobs">What's happening now</h2>
+<div class="card" id="jobsbox">
+  {% for j in jobs %}<div class="note"><strong>{{ j.what }}</strong> <span class="tag {{ 'bad' if j.status == 'failed' else ('warn' if j.status == 'running' else '') }}">{{ j.status }}</span>
+    <span class="src">started {{ j.started }}{% if j.ended %} · finished {{ j.ended }}{% endif %}</span>{% if j.result %}<div class="src">{{ j.result }}</div>{% endif %}</div>
+  {% else %}<p class="src">Nothing running.</p>{% endfor %}
+</div>
+
+<h2>Where each post has got to</h2>
+<div class="card">
+{% for q in pipe %}
+  <div class="note"><strong>{{ q.piece or q.id }}</strong> <span class="src">Queue {{ q.id }}{% if q.approval %} · Inbox item {{ q.approval }}{% endif %} · {{ q.media }} · {{ q.files }}</span>
+    <div class="switch">{% for name, ok in q.steps %}<span class="tag {{ '' if ok else 'warn' }}">{{ '✓' if ok else '…' }} {{ name }}</span>{% endfor %}</div>
+    {% set det = 'queue ' ~ q.id ~ (', Inbox item ' ~ q.approval if q.approval else '') ~ ', ' ~ q.piece ~ ', files: ' ~ q.files %}
+    {% if q.media == 'photo' %}{{ skill_button('photo-post-multiplatform', 'Post it with your photo skill', 'posts the approved photos across your platforms by the verified routes, captions from your words, pacing checked first.', det) }}
+    {% else %}{{ skill_button('video-post-multiplatform', 'Post it with your video skill', 'posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first.', det) }}{% endif %}
+    {{ skill_button('platform-community-surfaces', 'Find the communities for it', 'says which groups and communities this post should also land in, and which are gated, hostile or dead.', det) }}
+  </div>
+{% else %}<p class="src">Nothing queued yet.</p>{% endfor %}
+<p class="src">Approve in your <a href="/inbox">Inbox</a>; post from <a href="/post">Post</a>.</p>
+</div>
+
+<h2>Build videos</h2>
+<div class="card">
+  <p class="src">Your build-video skill keeps one Descript project per piece, collects the short clips you film while working, and cuts the longform creation video when you ask.</p>
+  {{ skill_button('process-longform', 'Add footage to a piece, or make its build video', 'files your new clips into that piece\'s Descript project, or cuts and publishes the creation video. Say which piece and what you want.') }}
+</div>
+
+<h2>Start a new post</h2>
+
+<section class="card">
+  <h3 style="margin-top:0">1. Get the files</h3>
+  <p class="src">From a dated "pics/vids" folder in your Drive. Files already on the laptop are copied, not downloaded twice. They land in <span class="mono">Batches\&lt;code&gt;\originals</span>.</p>
+  {% if drive_err %}<p class="src">Couldn't list your Drive folders just now: {{ drive_err }}</p>{% endif %}
+  <form method="post" action="/act/media" class="tellrow">
+    <input type="hidden" name="op" value="drive">
+    <label style="flex:2">Drive folder<select name="folder" required>{% for f in folders %}<option value="{{ f.id }}">{{ f.name }}</option>{% endfor %}</select></label>
+    <label>Batch code<input type="text" name="batch" required placeholder="e.g. 27" style="width:7rem"></label>
+    <button>Get the files</button>
+  </form>
+</section>
+
+<form method="post" action="/act/media" id="startform">
+<input type="hidden" name="op" value="start">
+<section class="card">
+  <h3 style="margin-top:0">2. Pick the files for this post</h3>
+  <p class="src">Tick one video, or one or more photos. Each shows whether it's prepped. Prep only ever re-encodes a video (never a crop) or makes resized copies of a photo; your originals are never changed.</p>
+  {% for b in batches %}
+  <details {{ 'open' if loop.first }}><summary>Batch {{ b.batch }} <span class="src">{{ b['items']|length }} files</span></summary>
+    <div class="mediagrid">
+    {% for it in b['items'] %}
+      <div class="mitem">
+        {% if it.kind == 'photo' %}<img src="/media-file?p={{ it.rel|urlencode }}" alt="{{ it.name }}" loading="lazy">
+        {% else %}<video src="/media-file?p={{ it.rel|urlencode }}" preload="none" controls></video>{% endif %}
+        <label class="src" style="font-weight:400"><input type="checkbox" name="f" value="{{ it.rel }}" data-kind="{{ it.kind }}" onchange="mpick()"> {{ it.name }}</label>
+        <div class="src">{{ it.kind }} · {{ it.folder }} · {{ it.mb }} MB ·
+          {% if it.prep_error %}<span class="tag bad">prep failed</span>{% elif it.ready %}<span class="tag">prepped</span>{% else %}<span class="tag warn">not prepped</span>{% endif %}</div>
+        <div class="switch" data-f="{{ it.rel }}" data-name="{{ it.name }}">
+          <button type="button" class="quiet" onclick="mone('prep', this)">Prep</button>
+          {% if it.kind == 'video' %}<button type="button" class="quiet" onclick="mone('captions', this)">Make captions</button>{% endif %}
+          <button type="button" class="quiet" onclick="medit(this)">Ask for an edit</button>
+        </div>
+        {% if it.captions %}<details><summary class="src">Spoken words (from captions)</summary><div class="srcbox" style="white-space:pre-wrap">{{ it.captions }}</div>
+          <button type="button" class="quiet" data-words="{{ it.captions }}" onclick="useWords(this)">Use these as my words</button></details>{% endif %}
+        {% if it.prep_error %}<div class="src">{{ it.prep_error }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    </div>
+  </details>
+  {% else %}<p class="src">No videos or photos on the laptop yet. Get some from Drive above.</p>{% endfor %}
+</section>
+
+<section class="card">
+  <h3 style="margin-top:0">3. Your words</h3>
+  <label>What piece is this?<input type="text" name="piece" required placeholder="e.g. 27A wild plum wand, first reveal"></label>
+  <label for="mwords">Your caption, in your own words (typed, spoken, or the video's own spoken words)</label>
+  <div class="tellrow"><textarea name="words" id="mwords" required></textarea>
+    <button type="button" class="quiet" onclick="speakInto('mwords', this)">🎤 Speak</button></div>
+</section>
+
+<section class="card">
+  <h3 style="margin-top:0">4. Where it goes</h3>
+  <p class="src" id="platnote">Tick files first; the platforms that take that kind of post light up.</p>
+  <div class="switch">
+  {% for p in (vplats + pplats)|unique %}<label class="src plat-pick" style="font-weight:400" data-video="{{ 'y' if p in vplats }}" data-photo="{{ 'y' if p in pplats }}"><input type="checkbox" name="platform" value="{{ p }}"> {{ p }}</label>{% endfor %}
+  </div>
+  <p class="src">Video goes straight out through your uploader on Pixelfed (and Bluesky once it's set up). Photos and every other platform go to the agent on duty or to your click, and the Post page says which. TikTok's description is always left blank; Facebook never gets hashtags (your posting skills).</p>
+  <label>Tags (added at the end where the platform has tags; not Facebook, TikTok or Etsy)<input type="text" name="tags" placeholder="e.g. woodworking handmade walkingcane ritualtools WitchSky"></label>
+  <p class="src">Your skills say tags on every post, on every platform that has them. For an occult or ritual post on Bluesky, include one of WitchSky, OccultSky, PaganSky, SpiritSky or EsotericSky.</p>
+  <label>Alt text: describe each photo, one line per photo, in order (Bluesky needs it)<textarea name="alt" style="min-height:4rem" placeholder="What the photo actually shows"></textarea></label>
+  <label>Instagram feed only: where did this already do well? (a link or a few words)<input type="text" name="earned" placeholder="Feed posts are earned: about twice your usual on another platform"></label>
+  <p><button>Send to my Inbox</button></p>
+</section>
+</form>
+
+<h2 id="communities">Communities: where posts also land</h2>
+<div class="card">
+  <p class="src">From your community-surfaces skill. Joining, replying and restacking are not posts; a Note or a community-tagged thread is, and goes through pacing.</p>
+  {% for status in ['active', 'phone job', 'pending', 'gated', 'hostile', 'none', 'not worth it', 'dead'] if surfaces.get(status) %}
+  <details {{ 'open' if status == 'active' }}><summary>{{ status|capitalize }} <span class="src">{{ surfaces[status]|length }}</span></summary>
+    <ul>{% for s in surfaces[status] %}<li><strong>{{ s.platform }}</strong>: {{ s.surface }}{% if s.need %} <span class="src">· {{ s.need }}</span>{% endif %}</li>{% endfor %}</ul>
+  </details>{% endfor %}
+</div>
+
+<form method="post" action="/act/media" id="oneform" hidden>
+  <input type="hidden" name="op"><input type="hidden" name="f"><input type="hidden" name="words"><input type="hidden" name="to">
+</form>
+<div id="editbox" class="ed-back" hidden>
+  <div class="ed-box" role="dialog" aria-modal="true" aria-labelledby="editname">
+    <div class="src">Ask for an edit to</div><strong id="editname"></strong>
+    <p class="src">Say what you want done (trim, captions burned in, music, a shorter cut). It goes to the agent you pick in your words. The full frame is kept unless you say otherwise, and the original is never changed.</p>
+    <div class="tellrow"><textarea id="editwords"></textarea><button type="button" class="quiet" onclick="speakInto('editwords', this)">🎤</button></div>
+    <div class="switch"><span class="src">Who does it:</span>{% for a in editors %}<button type="button" onclick="sendEdit('{{ a }}')">{{ a }}</button>{% endfor %}
+      <button type="button" class="quiet" onclick="document.getElementById('editbox').hidden=true">Cancel</button></div>
+  </div>
+</div>
+
+<style>
+.mediagrid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); margin: .6rem 0; }
+.mitem { border: 1px solid var(--line); border-radius: 8px; padding: .5rem; }
+.mitem img, .mitem video { width: 100%; max-height: 16rem; object-fit: contain; background: #000; border-radius: 6px; }
+.plat-pick.off { opacity: .4; }
+.ed-back { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; }
+.ed-back[hidden] { display: none; }
+.ed-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); width: 100%; max-width: 40rem; padding: 1rem 1.25rem; }
+</style>
+<script>
+let editFile = '';
+function mone(op, btn){ const o = document.getElementById('oneform'); o.op.value = op; o.f.value = btn.parentElement.dataset.f; o.submit(); }
+function medit(btn){ editFile = btn.parentElement.dataset.f; document.getElementById('editname').textContent = btn.parentElement.dataset.name; document.getElementById('editbox').hidden = false; }
+function sendEdit(to){
+  const w = document.getElementById('editwords').value.trim(); if (!w) return;
+  const o = document.getElementById('oneform'); o.op.value = 'edit'; o.f.value = editFile; o.words.value = w; o.to.value = to; o.submit();
+}
+function useWords(btn){ const t = document.getElementById('mwords'); t.value = btn.dataset.words; t.scrollIntoView({behavior: 'smooth', block: 'center'}); }
+function mpick(){
+  const picked = [...document.querySelectorAll('#startform input[name=f]:checked')].map(i => i.dataset.kind);
+  const kind = picked.length ? picked[0] : '';
+  const mixed = new Set(picked).size > 1;
+  document.getElementById('platnote').textContent = mixed ? 'A post is either one video or photos, not both. Untick one kind.'
+    : kind ? 'Platforms that take a ' + kind + ' post:' : 'Tick files first; the platforms that take that kind of post light up.';
+  document.querySelectorAll('.plat-pick').forEach(l => {
+    const ok = !kind || l.dataset[kind] === 'y';
+    l.classList.toggle('off', !ok); l.querySelector('input').disabled = !ok;
+    if (!ok) l.querySelector('input').checked = false;
+  });
+}
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){btn.textContent='Speaking not available';return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤 Speak'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■ Stop'; btn.onclick = () => r.stop(); r.start();
+}
+// keep "What's happening now" current without reloading the page (your typing is safe)
+setInterval(() => {
+  if (!document.querySelector('#jobsbox .tag.warn')) return;
+  fetch('/media').then(r => r.text()).then(h => {
+    const n = new DOMParser().parseFromString(h, 'text/html').getElementById('jobsbox');
+    if (n) document.getElementById('jobsbox').innerHTML = n.innerHTML;
+  }).catch(() => {});
+}, 10000);
+</script>
+{% endblock %}

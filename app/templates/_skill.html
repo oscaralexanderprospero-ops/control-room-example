@@ -1,0 +1,17 @@
+{# One plug-in skill, offered where its job happens. Pressing it puts a request
+   in the Requests tab for the agent he picks, with the details below attached.
+   skill: the plug-in skill id (see skills.JOBS); about: what it is for, in plain
+   words; detail: the facts the agent needs (listing ID, files, queue item). #}
+{% macro skill_button(skill, label, about, detail='', open=False) %}
+<details class="skillbtn" {{ 'open' if open }}><summary>✦ {{ label }}</summary>
+  <form method="post" action="/act/skill" class="stack">
+    <input type="hidden" name="skill" value="{{ skill }}">
+    <input type="hidden" name="detail" value="{{ detail }}">
+    <input type="hidden" name="back" value="{{ request.path }}">
+    <div class="src">Your plug-in skill <span class="mono">{{ skill }}</span>: {{ about }}{% if detail %} It gets: {{ detail }}{% endif %}</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+{% endmacro %}

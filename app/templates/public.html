@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Public status page</h1>
+<p class="lead">Built from the Public tab: books, bench, platforms and the move, in your own words. It is saved on the laptop only. Publishing it anywhere is your click.</p>
+<div class="card">
+  <p>{{ info.rows }} rows on the page. Saved to <span class="mono">{{ info.path }}</span></p>
+  {% if info.held %}<div class="notice warn">Held back by the fact checks:
+    <ul>{% for h in info.held %}<li>{{ h.item }}: {{ h.problems|join(', ') }}</li>{% endfor %}</ul></div>
+  {% else %}<p class="src">All rows passed the checks: the move as an aspiration, no forge of your own, no overstated lapidary.</p>{% endif %}
+  <p><a class="btn" href="/public/status.html" target="_blank">Open the page</a></p>
+</div>
+<iframe src="/public/status.html" title="Public status preview" style="width:100%;height:70vh;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>
+{% endblock %}

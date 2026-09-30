@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block body %}
+<h1 data-tour="skills-title">Skills and plug-ins</h1>
+<p class="lead">Everything your agents know how to do, in one place. Each job has a Claude version (your Example Shop plug-in) and a Kimi version; ChatGPT can take any of them as far as ChatGPT reaches (reading and reviewing, not running things on this laptop). Press "Ask" to hand a job over, in your own words. It goes to "Told the team" for that agent's next session. Whoever is on duty for passes right now: <strong>{{ duty.passes }}</strong>.</p>
+{% if request.args.get('done') == 'asked' %}<div class="notice">Handed over and logged. <a href="/requests">See it</a></div>{% endif %}
+
+<div class="boardgrid">
+{% for j in cat.jobs %}
+<section class="card">
+  <h2 style="margin-top:0">{{ j.job }}</h2>
+  <p>{{ j.what }}</p>
+  <div class="src">Claude: <span class="mono">{{ j.claude }}</span> · Kimi: <span class="mono">{{ j.kimi }}</span>{% if not j.kimi_found %} <span class="tag bad">Kimi skill not found on the laptop</span>{% endif %}</div>
+  <form method="post" action="/act/skill" class="stack">
+    <input type="hidden" name="skill" value="{{ j.job }}">
+    <div class="tellrow"><textarea name="note" id="sk-{{ loop.index }}" placeholder="What do you need? (optional; say it or type it)" style="min-height:3.5rem"></textarea>
+      <button type="button" class="quiet" onclick="speakInto('sk-{{ loop.index }}', this)">🎤</button></div>
+    <div class="switch"><button name="agent" value="Claude">Ask Claude</button><button class="quiet" name="agent" value="Kimi">Ask Kimi</button><button class="quiet" name="agent" value="ChatGPT">Ask ChatGPT</button></div>
+  </form>
+</section>
+{% endfor %}
+</div>
+
+<h2>Kimi's video-pipeline helpers</h2>
+<div class="boardgrid">{% for s in cat.workers %}
+<section class="card"><h3 style="margin:0">/{{ s.name }}</h3><p class="src">{{ s.description }}</p>
+  <form method="post" action="/act/skill" class="inline-form"><input type="hidden" name="skill" value="/{{ s.name }}"><input type="hidden" name="agent" value="Kimi">
+    <input type="text" name="note" placeholder="Which files or session?"><button class="quiet">Ask Kimi</button></form></section>
+{% endfor %}</div>
+
+<script>
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■'; btn.onclick = () => r.stop(); r.start();
+}
+</script>
+{% endblock %}

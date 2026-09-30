@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block body %}
+<h1 data-tour="post-title">Post</h1>
+<p class="lead">Approved items, ready to go. One click sets every platform going: direct ones post by themselves at their earliest allowed time, the rest go to an agent or to you, with the reason.</p>
+{% if request.args.get('done') == 'planned' %}<div class="notice">Set going. Direct platforms post at the time shown; the rest are handed over. This page updates as they go (press Refresh).</div>{% endif %}
+{% if request.args.get('done') == 'recorded' %}<div class="notice">Recorded in Posts and Pacing.</div>{% endif %}
+{% if request.args.get('done') == 'need-link' %}<div class="notice warn">Paste the post's link (starting with https://) so it can be recorded.</div>{% endif %}
+
+{% if board|rejectattr('planned')|list %}
+<div class="bulkbar" data-group="post">
+  <label><input type="checkbox" class="bulkall"> Select all</label> <span class="src bulkcount"></span>
+  <button type="button" data-op="post" data-confirm="Post all {n} selected items? Each still waits for its pacing time.">Post selected</button>
+</div>
+{% endif %}
+{% for it in board %}
+<div class="card">
+  <h2 style="margin-top:0">{% if not it.planned %}<input type="checkbox" class="bulkpick" data-group="post" value="{{ it.id }}" aria-label="Select {{ it.id }}">{% endif %}{{ it.item }}</h2>
+  <div class="src">{{ it.id }} · file: {{ it.staged or it.file or 'not found' }}</div>
+  {% if it.staged or it.file %}
+  <div class="fixrow">
+    <button class="quiet" data-path="{{ it.staged or it.file }}" onclick="showFile(this)">Show file</button>
+    <button class="quiet" data-path="{{ it.staged or it.file }}" onclick="copyFile(this)">Copy file (to paste into an upload box)</button>
+  </div>{% endif %}
+  <div class="wrap"><table>
+  <tr><th>Platform</th><th>How it goes</th><th>When / status</th><th></th></tr>
+  {% for p in it.platforms %}
+  <tr>
+    <td><strong>{{ p.platform }}</strong></td>
+    <td>{% if p.route == 'direct' %}<span class="tag">Direct</span>{% elif p.route == 'hand' %}<span class="tag warn">Hand to agent</span>{% else %}<span class="tag bad">Needs your click</span>{% endif %}
+      <div class="src">{{ p.why }}</div></td>
+    <td>{% if p.status == 'posted' %}<span class="tag">posted</span> {% if p.url %}<a href="{{ p.url }}" target="_blank">see it</a>{% endif %}
+        {% elif p.job %}{{ p.job.status }}{% if p.job.held %} (held){% elif p.job.status in ('waiting', 'handed to agent') %}, not before {{ p.job.not_before[5:10] }} {{ p.job.not_before[11:16] }}{% endif %}
+          {% if p.job.wait %}<div class="src">{{ p.job.wait }}</div>{% endif %}
+          {% if p.job.status == 'failed' %}<div class="src">{{ (p.job.result or {}).get('error','') }}</div>{% endif %}
+        {% else %}earliest: {{ p.earliest }}{% endif %}</td>
+    <td>{% if p.status != 'posted' and p.route != 'direct' %}
+        {% if p.page %}<a class="btn quiet" href="{{ p.page }}" target="_blank">Open {{ p.platform }} &#8599;</a>{% endif %}
+        <form method="post" action="/act/manual-posted" class="inline-form">
+          <input type="hidden" name="id" value="{{ it.id }}"><input type="hidden" name="platform" value="{{ p.platform }}">
+          <input type="url" name="url" placeholder="Link to the post" aria-label="Link to the post">
+          <button class="quiet">It's posted</button></form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </table></div>
+  {% if it.also %}<div class="srcbox" style="margin:.6rem 0"><div class="src">Also land it in (your community-surfaces skill):</div>
+    <ul style="margin:.2rem 0;padding-left:1.2rem">{% for a in it.also %}<li>{{ a }}</li>{% endfor %}</ul>
+    <div class="src">Joining, replying and restacking don't count as posts; a Note or a community-tagged thread does.</div></div>{% endif %}
+  {% if not it.planned %}
+  <form method="post" action="/act/post-plan" data-tour="post-go"><input type="hidden" name="id" value="{{ it.id }}"><button>Post it</button></form>
+  {% endif %}
+</div>
+{% else %}
+<div class="card">Nothing approved and waiting. Approve drafts in the <a href="/inbox">Inbox</a>.</div>
+{% endfor %}
+
+<h2>Upload Today</h2>
+<div class="card"><p>One folder everyone uses: <span class="mono">Control Room\Upload Today</span></p>
+<ul>{% for f in upload_today %}<li>{{ f }}</li>{% else %}<li class="src">Empty.</li>{% endfor %}</ul></div>
+
+<script>
+function copyFile(btn){
+  fetch('/act/copy-file',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:'path='+encodeURIComponent(btn.dataset.path)}).then(r=>{btn.textContent = r.ok ? 'Copied: now paste it into the upload box (Ctrl+V)' : 'Copy failed'});
+}
+</script>
+{% endblock %}

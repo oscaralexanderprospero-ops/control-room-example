@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Reviews</h1>
+<p class="lead">Critiques and suggestions from ChatGPT or Claude. Everything here is PROPOSED until you decide. Nothing proposed is acted on before that.</p>
+
+<div class="card">
+  <h2 style="margin-top:0">Paste from ChatGPT</h2>
+  <p class="src">Paste ChatGPT's note exactly as it wrote it. It's stored word for word, with the chat link.</p>
+  <form method="post" action="/act/chatgpt">
+    <label for="about">What it's about</label><input type="text" id="about" name="about" placeholder="e.g. Gallery page">
+    <label for="note">ChatGPT's note</label><textarea id="note" name="note" required></textarea>
+    <label for="link">Chat link</label><input type="url" id="link" name="link" placeholder="https://chatgpt.com/...">
+    <p><button>Log it in Reviews</button></p>
+  </form>
+  {% if request.args.get('done') == 'chatgpt' %}<div class="notice">Logged.</div>{% endif %}
+</div>
+
+{% for r in reviews %}
+<div class="card">
+  <div><strong>{{ r.ID }}</strong> · {{ r.By }} · {{ r.Date }}{% if stale(r.Date) %}<span class="stale">STALE</span>{% endif %}
+    <span class="tag {{ 'bad' if 'flagged' in r.Status else 'warn' }}">{{ r.Status }}</span></div>
+  <div class="src">About: {{ r.About }}</div>
+  <p style="white-space:pre-wrap">{{ r['Note (verbatim)'] }}</p>
+  {% if r['Chat link'] %}<div><a href="{{ r['Chat link'] }}" target="_blank">Chat link</a></div>{% endif %}
+  {% if r['Sam decided'] %}<div><span class="tag">You decided: {{ r['Sam decided'] }}</span> <span class="src">{{ r['Decided on'] }}</span></div>
+  {% else %}
+  <form method="post" action="/act/review-decide" class="switch">
+    <input type="hidden" name="id" value="{{ r.ID }}">
+    <button name="decision" value="yes">Yes, do it</button>
+    <button class="quiet" name="decision" value="no">No</button>
+    <button class="quiet" name="decision" value="later">Later</button>
+  </form>{% endif %}
+</div>
+{% endfor %}
+{% endblock %}

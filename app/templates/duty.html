@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_skill.html" import skill_button with context %}
+{% block body %}
+<h1>Who's on duty</h1>
+<div class="notice">This switch is the <strong>only</strong> one you need. Claude's and Kimi's scheduled tasks both stay on, and every run checks here first: whoever has the passes does the work, and the other stops quietly. Kimi's tasks run only while the Kimi app is open. Your rule: give the passes to whichever has more free tokens with less time left to spend them.</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="src">Scheduled passes are run by</div>
+    <div class="bigcell">{{ duty.passes or '—' }}</div>
+    <div class="src">since {{ duty.passes_since }} · set by {{ duty.passes_by }}</div>
+    <form method="post" action="/act/duty">
+      <input type="hidden" name="which" value="passes">
+      <label for="r1">Why (optional)</label><input type="text" id="r1" name="reason" placeholder="e.g. Claude is out of tokens">
+      <div class="switch">{% for c in passes_choices %}{% if c != duty.passes %}
+        <button name="to" value="{{ c }}" {% if c == 'ChatGPT' %}onclick="return confirm('ChatGPT works in ChatGPT, not on this laptop, so it cannot run the scheduled passes itself. While ChatGPT is on passes, Claude\'s and Kimi\'s passes stop. Switch anyway?')"{% endif %}>Switch to {{ c }}</button>{% endif %}{% endfor %}</div>
+      <p class="src">ChatGPT can take passes only as far as ChatGPT reaches: it reads the Sheet, it can't upload or run anything on this laptop.</p>
+    </form>
+  </div>
+  <div class="card">
+    <div class="src">Review duty is with</div>
+    <div class="bigcell">{{ duty.review or '—' }}</div>
+    <div class="src">since {{ duty.review_since }} · set by {{ duty.review_by }}</div>
+    <form method="post" action="/act/duty">
+      <input type="hidden" name="which" value="review">
+      <label for="r2">Why (optional)</label><input type="text" id="r2" name="reason" placeholder="e.g. ChatGPT is short on tokens">
+      <div class="switch">{% for c in review_choices %}{% if c != duty.review %}
+        <button name="to" value="{{ c }}">Switch to {{ c }}</button>{% endif %}{% endfor %}</div>
+    </form>
+  </div>
+</div>
+
+<h2>The three agents</h2>
+<div class="grid">
+{% for a in agents %}
+<div class="card agent">
+  <h3>{{ a.name }}</h3><div class="src">{{ a.maker }}</div>
+  <p>{{ a.lane }}</p>
+  {% if a.name == duty.passes %}<span class="tag">on passes</span>{% endif %}
+  {% if a.name == duty.review %}<span class="tag">on review</span>{% endif %}
+  {% if a.name in charter_served %}<div class="src">Connected to the app {{ charter_served[a.name] }}</div>{% endif %}
+  <div class="src">Source: {{ a.source }}</div>
+</div>
+{% endfor %}
+</div>
+
+<h2>Scheduled passes</h2>
+{{ skill_button('scheduled-passes', 'Add, retime or change a pass', 'holds every scheduled pass: what it does, what it reads first and where it stops. Say what you want changed.') }}
+<p class="src">From the Tasks tab. "Last run" fills in when an agent reports a pass through the app.</p>
+<div class="wrap"><table>
+<tr><th>Agent</th><th>Pass</th><th>When (Central)</th><th>Days</th><th>State</th><th>Last run</th><th>Notes</th></tr>
+{% for t in tasks %}
+{% set run = runs.get(t.Pass) %}
+<tr><td>{{ t.Agent }}</td><td>{{ t.Pass }}</td><td>{{ t['Central time'] }}</td><td>{{ t.Days }}</td>
+<td><span class="tag {{ '' if t.State=='on' else 'warn' }}">{{ t.State }}</span></td>
+<td>{% if run %}{{ run.when }} · {{ run.outcome }}{% else %}<span class="src">not reported yet</span>{% endif %}</td>
+<td class="src">{{ t.Notes }}
+  {% if t.Agent == duty.passes and t.State == 'on' %}
+  <form method="post" action="/act/hand-now"><input type="hidden" name="job" value="{{ t.Pass }}">
+    <input type="hidden" name="what" value="Run the scheduled pass &quot;{{ t.Pass }}&quot; now, exactly as the plug-in skill example-plugin:scheduled-passes describes it (Kimi: its oms-scheduled-passes skill), then report with POST /api/pass-run.">
+    <button class="quiet" style="padding:0 .5rem">Ask {{ duty.passes }} to run it now</button></form>{% endif %}</td></tr>
+{% endfor %}
+</table></div>
+
+<h2>Duty changes</h2>
+<div class="wrap"><table><tr><th>When</th><th>Which</th><th>From</th><th>To</th><th>By</th><th>Why</th></tr>
+{% for h in history|reverse %}<tr><td>{{ h['When (Central)'] }}</td><td>{{ h.Cell }}</td><td>{{ h.From }}</td>
+<td>{{ h.To }}</td><td>{{ h.By }}</td><td class="src">{{ h.Reason }}</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

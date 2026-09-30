@@ -1,0 +1,13 @@
+## The Charter
+
+This is the charter every agent reads first. It is served verbatim by the app at /api/charter.
+
+Replace this file with your own. A good charter says, in plain words:
+
+- what the agents may do on your behalf;
+- what they must never do (publish without your click, write words you did not say, open private folders);
+- how they should talk to you.
+
+##
+
+Nothing in this example charter is a real person's. It is a placeholder.

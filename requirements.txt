@@ -1,0 +1,12 @@
+Flask>=3.0
+waitress>=3.0
+google-api-python-client>=2.100
+google-auth-httplib2>=0.2
+google-auth-oauthlib>=1.2
+openpyxl>=3.1
+pillow>=10
+requests>=2.31
+segno>=1.6
+Send2Trash>=1.8
+imageio-ffmpeg>=0.5
+cryptography>=42

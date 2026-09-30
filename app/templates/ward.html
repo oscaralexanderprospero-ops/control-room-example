@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>The Ward</h1>
+
+<div class="grid">
+  <div class="card">
+    <div><span class="light {{ 'ok' if defender.ok else 'bad' }}"></span><strong>Antivirus</strong></div>
+    <p>{{ defender.words }}</p>
+    {% if defender.action %}<p class="action">{{ defender.action }}</p>{% endif %}
+    <div class="src">Definitions updated {{ defender.updated or 'unknown' }} · {{ defender.source }}</div>
+  </div>
+  <div class="card">
+    <strong>The lock</strong>
+    <ul>
+      <li>The app only answers on this laptop, plus your own linked phone through your private Tailscale link. Never the open network.</li>
+      <li>You get in through the desktop shortcut. Claude and Kimi each hold their own key.</li>
+      <li>The private Drive folders, CREDENTIALS and the uploader's config folder are blocked in the code.</li>
+      <li>Nothing is deleted or published without your click.</li>
+      <li>Outside text is stored as data. Text that tries to give orders, claims authority or asks for secrets is flagged below.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <strong>The charter</strong>
+    <p>The Address to Any Mind is served to every agent as it connects, and shown to anything uninvited.</p>
+    <p><a href="/address">Read the Address</a></p>
+    <div class="src">{{ address_source }}</div>
+  </div>
+</div>
+
+<h2 id="phone">Your phone</h2>
+<div class="card">
+  <p><strong>{{ phone.step }}</strong></p>
+  {% if phone.phones %}<p class="src">{{ phone.phones }} phone{{ 's' if phone.phones != 1 }} linked · address {{ phone.host }}</p>{% endif %}
+  {% if not via_phone %}
+  <div class="switch">
+    {% if phone.ready %}<form method="post" action="/act/phone-pair"><button>{{ 'Link another phone' if phone.phones else 'Link my phone' }}</button></form>{% endif %}
+    {% if phone.enabled or phone.phones %}<form method="post" action="/act/phone-forget" onsubmit="return confirm('Unlink every phone and close the phone door?')"><button class="quiet">Forget my phone</button></form>{% endif %}
+  </div>
+  {% endif %}
+  <p class="src">Your phone reaches the Control Room only through your private Tailscale link, only while this laptop is on, and only after you link it here with a one-time code.</p>
+</div>
+
+<h2>Suspicious</h2>
+{% for s in suspicious %}
+<div class="card"><div><strong>{{ s.when }}</strong> · {{ s.source }} · {{ s.who }}
+  {% for k in s.kinds %}<span class="tag bad">{{ k }}</span>{% endfor %}</div>
+  <details><summary>What it said (stored as data, not acted on)</summary><p class="mono" style="white-space:pre-wrap">{{ s.text }}</p></details></div>
+{% else %}<p>Nothing suspicious so far.</p>{% endfor %}
+
+<h2>Everything done, newest first</h2>
+<div class="wrap"><table><tr><th>When</th><th>Who</th><th>What</th></tr>
+{% for a in actions %}<tr><td>{{ a.when }}</td><td>{{ a.who }}</td><td>{{ a.what }}</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

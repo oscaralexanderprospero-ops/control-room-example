@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block body %}
+<h1 data-tour="stats-title">Stats and SEO</h1>
+<p class="lead">How each platform is doing, and the words that get your pieces found. Bluesky and Pixelfed update themselves; add the others when you look them up, or the agents add them on their passes. Every number shows its date and where it came from.</p>
+
+<h2>Stats</h2>
+<div class="card">
+  <form method="post" action="/act/stats" style="display:inline"><input type="hidden" name="op" value="refresh"><button class="quiet">Update Bluesky and Pixelfed now</button></form>
+  <div class="wrap" style="margin-top:.6rem"><table>
+  <tr><th>Platform</th><th>What</th><th>Number</th><th>Change</th><th>When · source</th></tr>
+  {% for r in stats %}
+  <tr><td><strong>{{ r.platform }}</strong>{% if r.auto %} <span class="tag">updates itself</span>{% endif %}</td>
+    <td>{{ r.metric }}</td><td class="num" style="font-size:1.2rem">{{ r.value }}</td>
+    <td>{{ r.change }}</td>
+    <td class="src">{{ r.date }}{% if stale(r.date) %}<span class="stale">STALE</span>{% endif %} · {{ r.source }}</td></tr>
+  {% else %}<tr><td colspan="5">No numbers yet.</td></tr>{% endfor %}
+  </table></div>
+  <details open><summary>Add a number</summary>
+    <form method="post" action="/act/stats" class="lugrid">
+      <input type="hidden" name="op" value="add">
+      <label>Platform<select name="platform">{% for p in platforms %}<option>{{ p }}</option>{% endfor %}</select></label>
+      <label>What<select name="metric">{% for m in metrics %}<option>{{ m }}</option>{% endfor %}</select></label>
+      <label>Number<input type="text" name="value" required inputmode="numeric"></label>
+      <label>Where you read it<input type="text" name="source" placeholder="e.g. Etsy shop stats, last 30 days"></label>
+      <div class="wide"><button>Add</button></div>
+    </form></details>
+</div>
+
+<h2>Keyword and tag bank</h2>
+<div class="card">
+  <p class="src">The words you use to get found, by product line. Agents use these when they fill tags on listings and posts.{% if title_tag_fixes %} <a href="/listings/updates">{{ title_tag_fixes }} listings have title or tag wording to fix →</a>{% endif %}</p>
+  <div class="grid">{% for line, tags in seo.by_line.items() %}
+    <div><h3 style="margin:.2rem 0">{{ line }}</h3>
+      {% for t in tags %}<div>{{ t.Text }} <span class="src">{{ t.Platforms }}</span>
+        <form method="post" action="/act/seo" style="display:inline"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="{{ t.ID }}"><input type="hidden" name="status" value="archived"><button class="quiet" style="padding:0 .4rem" title="Remove from the bank (kept in the Sheet)">×</button></form></div>
+      {% else %}<div class="src">none yet</div>{% endfor %}</div>
+  {% endfor %}</div>
+  <form method="post" action="/act/seo" class="lugrid" style="margin-top:.6rem">
+    <input type="hidden" name="op" value="add"><input type="hidden" name="kind" value="Tag">
+    <label>Keyword or tag<input type="text" name="text" required placeholder="e.g. hand carved walking cane"></label>
+    <label>Product line<select name="line">{% for l in lines %}<option>{{ l }}</option>{% endfor %}</select></label>
+    <label>Where it's used<input type="text" name="platforms" placeholder="e.g. Etsy, Blog"></label>
+    <div class="wide"><button>Add to the bank</button></div>
+  </form>
+</div>
+
+<h2>SEO to-do</h2>
+<div class="card">
+  {% for t in seo.tasks if t.Status != 'done' %}
+  <div class="note"><strong>{{ t.Text }}</strong> <span class="tag">{{ t.Platforms }}</span>
+    {% if t.Why %}<div class="src">Why: {{ t.Why }}</div>{% endif %}
+    <div class="switch">
+      <form method="post" action="/act/seo"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="{{ t.ID }}"><input type="hidden" name="status" value="done"><button class="quiet">Done</button></form>
+      <form method="post" action="/act/seo"><input type="hidden" name="op" value="hand"><input type="hidden" name="id" value="{{ t.ID }}"><button class="quiet">Hand to {{ duty.passes }}</button></form>
+      <form method="post" action="/act/seo"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="{{ t.ID }}"><input type="hidden" name="status" value="archived"><button class="quiet">Drop it</button></form>
+    </div></div>
+  {% else %}<p>Nothing to do.</p>{% endfor %}
+  <form method="post" action="/act/seo" class="lugrid">
+    <input type="hidden" name="op" value="add"><input type="hidden" name="kind" value="Task">
+    <label class="wide">New SEO task<input type="text" name="text" required></label>
+    <label>Platform<input type="text" name="platforms"></label>
+    <label>Why<input type="text" name="why"></label>
+    <div class="wide"><button>Add</button></div>
+  </form>
+  <p class="src">Seasonal changes (switch on for Samhain, switch back after) live in <a href="/marketing">Marketing</a>.</p>
+</div>
+{% endblock %}

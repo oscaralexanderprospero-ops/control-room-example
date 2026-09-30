@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+config/
+data/*
+!data/.gitkeep
+Batches/
+Backup/
+Upload Today/
+_to_delete/
+drafts/
+public/
+*.log
+.env
+client_secret*.json
