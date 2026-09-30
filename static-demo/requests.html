@@ -6,7 +6,7 @@
 </head><body data-page="requests"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:34 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:40 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -15,11 +15,11 @@
     <span class="navlabel">Daily</span>
     <a href="plan.html" class="" data-tour="nav-plan">My day</a>
     <a href="plan.html" class="">Today</a>
-    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
     <a href="post.html" class="" data-tour="nav-post">Post</a>
     <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
     <a href="business.html" class="" data-tour="nav-business">Business</a>
-    <a href="requests.html" class="on">Told the team</a>
+    <a href="requests.html" class="on">Told the team<span class="n soft">1</span></a>
   </nav>
   <nav>
     <span class="navlabel">Work</span>
@@ -118,7 +118,7 @@ function omsMenu(open, remember){
 })();
 </script>
 <main>
-<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+<a class="nowbar" href="plan.html#now">Now: <strong>Draft W-01: Blog: What I learned oiling my first walnut piece</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
 
 
 
@@ -126,7 +126,28 @@ function omsMenu(open, remember){
 
 <h1>What you've told the team</h1>
 <p class="lead">Every instruction you give, in your own words, with who it went to and what happened.</p>
-<p>Nothing yet. Use "Tell the team" at the top of any screen.</p>
+
+<div class="card">
+  <div><strong>S-003</strong> · 2026-01-15 07:50 · for Claude · writing
+    <span class="tag ">done</span></div>
+  <p style="white-space:pre-wrap">Start a draft about what I learned oiling walnut. Use what I told you last week.</p>
+  <div><strong>Result:</strong> Draft W-01 is on the Writing screen. <span class="src">2026-01-15 08:15</span></div>
+</div>
+
+<div class="card">
+  <div><strong>S-002</strong> · 2026-01-14 19:20 · for Claude · operations
+    <span class="tag ">working</span></div>
+  <p style="white-space:pre-wrap">Move the Facebook post for the walnut stick to noon tomorrow.</p>
+  
+</div>
+
+<div class="card">
+  <div><strong>S-001</strong> · 2026-01-14 08:10 · for Claude · upload
+    <span class="tag ">done</span></div>
+  <p style="white-space:pre-wrap">Please queue the bookends video for Bluesky and YouTube, and put the captions in my Inbox.</p>
+  <div><strong>Result:</strong> Queued as Q-05; captions are in the Inbox (A-03). <span class="src">2026-01-14 08:40</span></div>
+</div>
+
 
 </main>
 <div id="tour" class="tour" hidden role="dialog" aria-live="polite">

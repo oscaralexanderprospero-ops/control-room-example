@@ -63,4 +63,5 @@ while todo:
     (OUT / name_of(p)).write_text(html, encoding="utf-8")
 
 (OUT / "index.html").write_text('<meta http-equiv="refresh" content="0; url=plan.html">', encoding="utf-8")
+shutil.copy(ROOT / "hf-space" / "README.md", OUT / "README.md")
 print("pages:", sorted(f.name for f in OUT.glob("*.html")))

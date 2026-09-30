@@ -6,7 +6,7 @@
 </head><body data-page="today"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:34 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:40 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -15,11 +15,11 @@
     <span class="navlabel">Daily</span>
     <a href="plan.html" class="" data-tour="nav-plan">My day</a>
     <a href="plan.html" class="on">Today</a>
-    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
     <a href="post.html" class="" data-tour="nav-post">Post</a>
     <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
     <a href="business.html" class="" data-tour="nav-business">Business</a>
-    <a href="requests.html" class="">Told the team</a>
+    <a href="requests.html" class="">Told the team<span class="n soft">1</span></a>
   </nav>
   <nav>
     <span class="navlabel">Work</span>
@@ -118,7 +118,7 @@ function omsMenu(open, remember){
 })();
 </script>
 <main>
-<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+<a class="nowbar" href="plan.html#now">Now: <strong>Draft W-01: Blog: What I learned oiling my first walnut piece</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
 
 
 
@@ -127,10 +127,21 @@ function omsMenu(open, remember){
 <h1>Today</h1>
 <p class="lead">What's queued, what went out today, and how many more each platform can take.</p>
 
+<div class="notice warn"><a href="inbox.html">2 drafts waiting in your Inbox</a></div>
+
 
 <h2>Due today</h2>
 <div class="card" data-tour="due">
-  <p>Nothing is due today or overdue.</p>
+  
+  <div class="note" style="border-left-color:var(--rust)"><span class="tag bad">overdue since Tue 20 Jan</span>
+    <span class="tag">Writing</span> <a href="/writing#W-01">Draft W-01: Blog: What I learned oiling my first walnut piece</a></div>
+  
+  <div class="note" style="border-left-color:var(--rust)"><span class="tag bad">overdue since Tue 27 Jan</span>
+    <span class="tag">Writing</span> <a href="/writing#W-02">Draft W-02: Essay: Why I still make spoons by hand</a></div>
+  
+  <div class="note" style="border-left-color:var(--rust)"><span class="tag bad">overdue since Thu 22 Jan</span>
+    <span class="tag">Writing</span> <a href="/writing#P-1">Question P-1: Do you oil the inside of a spoon bowl, or leave it raw?</a></div>
+  
   <p class="src">Worked out fresh from the dates each time the page loads: orders and messages, custom orders, writing, and posts whose time has come.</p>
 </div>
 
@@ -379,6 +390,39 @@ function omsMenu(open, remember){
 <td>Example: the app asks once and does not nag.</td>
 <td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
   <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-03">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-05</strong> Ash bookends<div class="src">ash-bookends-finish.mp4</div></td>
+<td>Bluesky, YouTube, Instagram</td>
+<td><span class="tag ">ready</span>
+  </td>
+<td>Example: caption is cut from his words, never rewritten.</td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-05">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-06</strong> Ash bookends<div class="src">ash-bookends-photos-1.jpg</div></td>
+<td>Pixelfed, Threads, Tumblr</td>
+<td><span class="tag ">in progress</span>
+  <div class="src">Claimed: Claude</div></td>
+<td>Example: claimed by Claude, photos being prepared.</td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-06">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-07</strong> Cherry cutting board (sold)<div class="src">cherry-board-sold.mp4</div></td>
+<td>Facebook</td>
+<td><span class="tag warn">held</span>
+  </td>
+<td>Example: a sold piece never gets a shop link.</td>
+<td class="src">example ledger<br>as of 2026-01-09<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-07">
   <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
 </tr>
 

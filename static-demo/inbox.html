@@ -6,7 +6,7 @@
 </head><body data-page="inbox"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:34 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:40 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -15,11 +15,11 @@
     <span class="navlabel">Daily</span>
     <a href="plan.html" class="" data-tour="nav-plan">My day</a>
     <a href="plan.html" class="">Today</a>
-    <a href="inbox.html" class="on" data-tour="nav-inbox">Inbox</a>
+    <a href="inbox.html" class="on" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
     <a href="post.html" class="" data-tour="nav-post">Post</a>
     <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
     <a href="business.html" class="" data-tour="nav-business">Business</a>
-    <a href="requests.html" class="">Told the team</a>
+    <a href="requests.html" class="">Told the team<span class="n soft">1</span></a>
   </nav>
   <nav>
     <span class="navlabel">Work</span>
@@ -118,7 +118,7 @@ function omsMenu(open, remember){
 })();
 </script>
 <main>
-<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+<a class="nowbar" href="plan.html#now">Now: <strong>Draft W-01: Blog: What I learned oiling my first walnut piece</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
 
 
 
@@ -131,8 +131,142 @@ function omsMenu(open, remember){
 
 
 
+<div class="bulkbar" data-group="inbox">
+  <label><input type="checkbox" class="bulkall bulkpick-all"> Select all</label> <span class="src bulkcount"></span>
+  <button type="button" data-op="approve" data-confirm="Approve all {n} selected items, every platform?">Approve selected</button>
+  <input type="text" name="note" placeholder="Reason or note (for send back or ChatGPT)">
+  <button type="button" class="quiet" data-op="send-back">Send back selected</button>
+  <button type="button" class="quiet" data-op="chatgpt">Ask ChatGPT about selected</button>
+</div>
 
-<div class="card">Nothing waiting for approval.</div>
+
+
+<div class="card" id="A-03">
+  <h2 style="margin-top:0"><input type="checkbox" class="bulkpick" data-group="inbox" value="A-03" aria-label="Select A-03">Captions for the ash bookends video</h2>
+  
+  <div class="src">A-03 · drafted by Claude · queue Q-05 · status waiting</div>
+  <div class="inboxgrid">
+    <div class="srcbox" data-tour="inbox-source">
+      <h3>Your words</h3>
+      <p>The ash bookends are done. Two coats of oil, and I rounded every edge by hand. They are heavy enough to hold a shelf of books.</p>
+      
+      
+      
+      <div class="src">Files: ash-bookends-finish.mp4</div>
+        
+          <video src="/media-file?p=ash-bookends-finish.mp4" preload="none" controls style="width:100%;max-height:22rem;background:#000;border-radius:6px;margin-top:.4rem"></video>
+          
+        
+    </div>
+    <div>
+    
+    
+    
+      <div class="plat ok">
+        <div class="plathead"><strong>Bluesky</strong>
+          
+          <span class="src">78 / 300 characters</span></div>
+        <div class="draft">The ash bookends are done. Two coats of oil, and I rounded every edge by hand.</div>
+        <ul class="checks"><li class="ok">✓ Length: 78 of 300 characters</li><li class="ok">✓ His words only: Every word is from his source.</li><li class="ok">✓ Shop link: No shop link.</li><li class="ok">✓ Attribution note: His own words: no note needed.</li><li class="ok">✓ Factual limits: No forge, lapidary or move problems.</li><li class="warn">⚠ Tags: No tags: the skills say tags on every post, on every platform that has them.</li><li class="ok">✓ Pacing: Earliest: now; 5 left today</li></ul>
+        
+        <details><summary>Cut a sentence</summary>
+          
+          <form method="post" action="#" class="cutrow">
+            <input type="hidden" name="id" value="A-03"><input type="hidden" name="platform" value="Bluesky">
+            <input type="hidden" name="index" value="0">
+            <span>The ash bookends are done.</span> <button class="quiet" title="Remove this sentence">Cut</button>
+          </form>
+          <form method="post" action="#" class="cutrow">
+            <input type="hidden" name="id" value="A-03"><input type="hidden" name="platform" value="Bluesky">
+            <input type="hidden" name="index" value="1">
+            <span>Two coats of oil, and I rounded every edge by hand.</span> <button class="quiet" title="Remove this sentence">Cut</button>
+          </form>
+          
+        </details>
+        
+        <form method="post" action="#" style="display:inline">
+          <input type="hidden" name="id" value="A-03"><input type="hidden" name="platform" value="Bluesky">
+          <button class="quiet">Approve Bluesky only</button></form>
+      </div>
+    
+      <div class="plat ok">
+        <div class="plathead"><strong>YouTube title</strong>
+          
+          <span class="src">25 / 100 characters</span></div>
+        <div class="draft">The ash bookends are done</div>
+        <ul class="checks"><li class="ok">✓ Length: 25 of 100 characters</li><li class="ok">✓ His words only: Every word is from his source.</li><li class="ok">✓ Shop link: No shop link.</li><li class="ok">✓ Attribution note: His own words: no note needed.</li><li class="ok">✓ Factual limits: No forge, lapidary or move problems.</li><li class="ok">✓ Pacing: Earliest: now; 5 left today</li></ul>
+        
+        
+        <form method="post" action="#" style="display:inline">
+          <input type="hidden" name="id" value="A-03"><input type="hidden" name="platform" value="YouTube title">
+          <button class="quiet">Approve YouTube title only</button></form>
+      </div>
+    
+    </div>
+  </div>
+  <div class="switch" data-tour="inbox-buttons">
+    <form method="post" action="#"><input type="hidden" name="id" value="A-03"><button>Approve all</button></form>
+    <form method="post" action="#" class="inline-form">
+      <input type="hidden" name="id" value="A-03">
+      <input type="text" name="note" placeholder="What should ChatGPT look at? (optional)">
+      <button class="quiet">Ask ChatGPT to review</button></form>
+    <a class="btn quiet" href="#" target="_blank">Text to paste into ChatGPT</a>
+    <form method="post" action="#" class="inline-form">
+      <input type="hidden" name="id" value="A-03">
+      <input type="text" name="reason" placeholder="Why? (optional)">
+      <button class="quiet">Send back</button></form>
+  </div>
+</div>
+
+
+<div class="card" id="A-04">
+  <h2 style="margin-top:0"><input type="checkbox" class="bulkpick" data-group="inbox" value="A-04" aria-label="Select A-04">Caption for the maple spoon photos</h2>
+  
+  <div class="src">A-04 · drafted by Claude · queue Q-03 · status waiting</div>
+  <div class="inboxgrid">
+    <div class="srcbox" data-tour="inbox-source">
+      <h3>Your words</h3>
+      <p>Three maple spoons, freshly oiled. The grain in the smallest one surprised me.</p>
+      
+      
+      
+      <div class="src">Files: spoons-flatlay.jpg</div>
+        
+          <img src="/media-file?p=spoons-flatlay.jpg" alt="spoons-flatlay.jpg" loading="lazy" style="width:100%;max-height:22rem;object-fit:contain;border-radius:6px;margin-top:.4rem">
+        
+    </div>
+    <div>
+    
+    
+    
+      <div class="plat ok">
+        <div class="plathead"><strong>Pixelfed</strong>
+          
+          <span class="src">34 / 2000 characters</span></div>
+        <div class="draft">Three maple spoons, freshly oiled.</div>
+        <ul class="checks"><li class="ok">✓ Length: 34 of 2000 characters</li><li class="ok">✓ His words only: Every word is from his source.</li><li class="ok">✓ Shop link: No shop link.</li><li class="ok">✓ Attribution note: His own words: no note needed.</li><li class="ok">✓ Factual limits: No forge, lapidary or move problems.</li><li class="warn">⚠ Tags: No tags: the skills say tags on every post, on every platform that has them.</li><li class="ok">✓ Pacing: Earliest: now; 5 left today</li></ul>
+        
+        
+        <form method="post" action="#" style="display:inline">
+          <input type="hidden" name="id" value="A-04"><input type="hidden" name="platform" value="Pixelfed">
+          <button class="quiet">Approve Pixelfed only</button></form>
+      </div>
+    
+    </div>
+  </div>
+  <div class="switch" data-tour="inbox-buttons">
+    <form method="post" action="#"><input type="hidden" name="id" value="A-04"><button>Approve all</button></form>
+    <form method="post" action="#" class="inline-form">
+      <input type="hidden" name="id" value="A-04">
+      <input type="text" name="note" placeholder="What should ChatGPT look at? (optional)">
+      <button class="quiet">Ask ChatGPT to review</button></form>
+    <a class="btn quiet" href="#" target="_blank">Text to paste into ChatGPT</a>
+    <form method="post" action="#" class="inline-form">
+      <input type="hidden" name="id" value="A-04">
+      <input type="text" name="reason" placeholder="Why? (optional)">
+      <button class="quiet">Send back</button></form>
+  </div>
+</div>
 
 
 

@@ -6,7 +6,7 @@
 </head><body data-page="writing"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:34 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:40 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -15,11 +15,11 @@
     <span class="navlabel">Daily</span>
     <a href="plan.html" class="" data-tour="nav-plan">My day</a>
     <a href="plan.html" class="">Today</a>
-    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
     <a href="post.html" class="" data-tour="nav-post">Post</a>
     <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
     <a href="business.html" class="" data-tour="nav-business">Business</a>
-    <a href="requests.html" class="">Told the team</a>
+    <a href="requests.html" class="">Told the team<span class="n soft">1</span></a>
   </nav>
   <nav>
     <span class="navlabel">Work</span>
@@ -118,7 +118,7 @@ function omsMenu(open, remember){
 })();
 </script>
 <main>
-<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+<a class="nowbar" href="plan.html#now">Now: <strong>Draft W-01: Blog: What I learned oiling my first walnut piece</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
 
 
 
@@ -153,7 +153,7 @@ function omsMenu(open, remember){
 
 
 <section class="card" id="capture" data-tour="capture">
-  <h2 style="margin-top:0">Capture and staging <span class="src">0 staged · 0 approved</span></h2>
+  <h2 style="margin-top:0">Capture and staging <span class="src">2 staged · 0 approved</span></h2>
   <p class="src">Write or speak while your hands are busy. Your words are kept exactly as they come out. Send them to a new piece, or into a section of any document. Approve a capture and Claude takes it from there, tidying only grammar and false starts.</p>
   
   <form method="post" action="#">
@@ -171,7 +171,23 @@ function omsMenu(open, remember){
     <p><button>Stage it</button></p>
   </form>
   
+  <div class="bulkbar" data-group="captures">
+    <label><input type="checkbox" class="bulkall"> Select all staged</label> <span class="src bulkcount"></span>
+    <button type="button" data-op="capture-approve" data-confirm="Approve all {n} selected captures and send them to Claude to merge?">Approve selected</button>
+  </div>
   
+  <div class="note"><input type="checkbox" class="bulkpick" data-group="captures" value="K-02" aria-label="Select K-02"><strong class="ed-click" onclick="edOpenItem('K-02')">Capture K-02 · goes into &#34;Blog&#34;, section &#34;Oiling&#34; · topic: Blog post</strong> <span class="tag warn">staged</span> <span class="src">2026-01-15</span>
+    <div class="ed-click" style="white-space:pre-wrap" onclick="edOpenItem('K-02')">Walnut drinks the first coat. Wait a full day before the second one.</div>
+    <div class="switch"><button type="button" class="quiet" onclick="edOpenItem('K-02')">✎ Edit</button>
+    <form method="post" action="#"><input type="hidden" name="id" value="K-02"><button class="quiet">Approve: merge it</button></form>
+    <form method="post" action="#" onsubmit="return confirm('Delete capture K-02 from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="K-02"><button class="quiet danger-text">Delete</button></form></div>
+  </div>
+  <div class="note"><input type="checkbox" class="bulkpick" data-group="captures" value="K-01" aria-label="Select K-01"><strong class="ed-click" onclick="edOpenItem('K-01')">Capture K-01 · goes into &#34;Spoon carving guide&#34;, section &#34;Chapter 4&#34; · topic: Book</strong> <span class="tag warn">staged</span> <span class="src">2026-01-15</span>
+    <div class="ed-click" style="white-space:pre-wrap" onclick="edOpenItem('K-01')">Keep the hook knife sharper than you think you need. A dull one tears the grain and you fight it the whole way.</div>
+    <div class="switch"><button type="button" class="quiet" onclick="edOpenItem('K-01')">✎ Edit</button>
+    <form method="post" action="#"><input type="hidden" name="id" value="K-01"><button class="quiet">Approve: merge it</button></form>
+    <form method="post" action="#" onsubmit="return confirm('Delete capture K-01 from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="K-01"><button class="quiet danger-text">Delete</button></form></div>
+  </div>
 </section>
 
 
@@ -190,9 +206,121 @@ function omsMenu(open, remember){
 
 <h2>Drafts waiting on you</h2>
 
+<div class="card" id="W-01">
+  <div><span class="src">Draft W-01</span> <strong class="ed-click" onclick="edOpenItem('W-01')">Blog: What I learned oiling my first walnut piece</strong></div>
+  <div class="src">Claude · public date 2026-01-20 · <span class="tag warn">waiting</span></div>
+  <form method="post" action="#" class="fixrow">
+    <input type="hidden" name="id" value="W-01">
+    <button type="button" class="quiet" onclick="edOpenItem('W-01')">✎ Edit</button>
+    <button name="decision" value="yes">Yes, publish as planned</button>
+    <button class="quiet" name="decision" value="no">No</button>
+    
+    <input type="text" name="reason" placeholder="Anything to change? (sends it back)" style="max-width:22rem">
+    <button class="quiet" name="decision" value="send back">Send back</button>
+  </form>
+  
+<details class="skillbtn" ><summary>✦ Finish or cut it for each platform</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="longform-essay-multiplatform">
+    <input type="hidden" name="detail" value="draft W-01: Blog: What I learned oiling my first walnut piece">
+    <input type="hidden" name="back" value="/writing">
+    <div class="src">Your plug-in skill <span class="mono">longform-essay-multiplatform</span>: checks the facts, keeps only your words, and cuts this draft for each platform. It gets: draft W-01: Blog: What I learned oiling my first walnut piece</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  <form method="post" action="#" onsubmit="return confirm('Delete draft W-01 from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="W-01"><button class="quiet danger-text">Delete this draft</button></form>
+  <div class="src">Source: Built from Sam&#39;s stated positions · as of 2026-01-15<span class="stale">STALE</span></div>
+</div>
+
+<div class="card" id="W-02">
+  <div><span class="src">Draft W-02</span> <strong class="ed-click" onclick="edOpenItem('W-02')">Essay: Why I still make spoons by hand</strong></div>
+  <div class="src">Claude · public date 2026-01-27 · <span class="tag warn">waiting</span></div>
+  <form method="post" action="#" class="fixrow">
+    <input type="hidden" name="id" value="W-02">
+    <button type="button" class="quiet" onclick="edOpenItem('W-02')">✎ Edit</button>
+    <button name="decision" value="yes">Yes, publish as planned</button>
+    <button class="quiet" name="decision" value="no">No</button>
+    
+    <input type="text" name="reason" placeholder="Anything to change? (sends it back)" style="max-width:22rem">
+    <button class="quiet" name="decision" value="send back">Send back</button>
+  </form>
+  
+<details class="skillbtn" ><summary>✦ Finish or cut it for each platform</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="longform-essay-multiplatform">
+    <input type="hidden" name="detail" value="draft W-02: Essay: Why I still make spoons by hand">
+    <input type="hidden" name="back" value="/writing">
+    <div class="src">Your plug-in skill <span class="mono">longform-essay-multiplatform</span>: checks the facts, keeps only your words, and cuts this draft for each platform. It gets: draft W-02: Essay: Why I still make spoons by hand</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  <form method="post" action="#" onsubmit="return confirm('Delete draft W-02 from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="W-02"><button class="quiet danger-text">Delete this draft</button></form>
+  <div class="src">Source: Built from Sam&#39;s stated positions · as of 2026-01-15<span class="stale">STALE</span></div>
+</div>
+
+<div class="card" id="W-03">
+  <div><span class="src">Draft W-03</span> <strong class="ed-click" onclick="edOpenItem('W-03')">Newsletter: January at the bench</strong></div>
+  <div class="src">Kimi · public date 2026-01-31 · <span class="tag warn">sent back</span></div>
+  <form method="post" action="#" class="fixrow">
+    <input type="hidden" name="id" value="W-03">
+    <button type="button" class="quiet" onclick="edOpenItem('W-03')">✎ Edit</button>
+    <button name="decision" value="yes">Yes, publish as planned</button>
+    <button class="quiet" name="decision" value="no">No</button>
+    
+    <input type="text" name="reason" placeholder="Anything to change? (sends it back)" style="max-width:22rem">
+    <button class="quiet" name="decision" value="send back">Send back</button>
+  </form>
+  
+<details class="skillbtn" ><summary>✦ Finish or cut it for each platform</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="longform-essay-multiplatform">
+    <input type="hidden" name="detail" value="draft W-03: Newsletter: January at the bench">
+    <input type="hidden" name="back" value="/writing">
+    <div class="src">Your plug-in skill <span class="mono">longform-essay-multiplatform</span>: checks the facts, keeps only your words, and cuts this draft for each platform. It gets: draft W-03: Newsletter: January at the bench</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  <form method="post" action="#" onsubmit="return confirm('Delete draft W-03 from the app? It stays in your Sheet, marked deleted.')"><input type="hidden" name="id" value="W-03"><button class="quiet danger-text">Delete this draft</button></form>
+  <div class="src">Source: Example: sent back with a reason · as of 2026-01-15<span class="stale">STALE</span></div>
+</div>
+
 
 <h2 data-tour="prompts">Questions you owe (your positions)</h2>
 <p class="src">Pieces are built only from positions you have stated; where there is no stated position, nothing can be built. Your answer is saved word for word and the piece is stitched from it. <em>(example ledger A2 (your 10 Sep rule))</em></p>
+
+<div class="card" id="P-1">
+  <div><strong>Question P-1</strong> · for the blog slot on 2026-01-22 · <span class="tag warn">waiting</span></div>
+  <p><strong>Do you oil the inside of a spoon bowl, or leave it raw?</strong></p>
+  
+  
+  
+  <details><summary>Answer this</summary>
+    <form method="post" action="#">
+      <input type="hidden" name="id" value="P-1">
+      <div class="tellrow"><textarea name="words" id="ans-P-1" required></textarea>
+        <button type="button" class="quiet" onclick="speakInto('ans-P-1', this)">🎤 Speak</button></div>
+      <p><button>Save my answer</button></p>
+    </form>
+  </details>
+</div>
+
+<div class="card" id="P-2">
+  <div><strong>Question P-2</strong> · for the blog slot on 2026-01-29 · <span class="tag ">answered 2026-01-14</span></div>
+  <p><strong>What is the one tool a beginner should buy first?</strong></p>
+  
+  
+  <div class="srcbox"><strong>Your answer:</strong> A good straight knife, before anything else.</div>
+  
+</div>
 
 
 <h2>Publishing rhythm</h2>
@@ -233,12 +361,30 @@ function omsMenu(open, remember){
     <select name="category"></select>
     <button>Queue</button></form>
   
-  <p class="src">Idea: 0 · Drafting: 0 · Queued: 0 · Scheduled: 0 · Published: 0</p>
+  <div class="note qitem" data-platform="Blog"><strong>What I learned oiling my first walnut piece</strong> <span class="tag">Blog</span> <span class="tag">Craft</span>
+    <form method="post" action="#" style="display:inline"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="Q-W1">
+      <select name="status" aria-label="Status"><option >Idea</option><option selected>Drafting</option><option >Queued</option><option >Scheduled</option><option >Published</option></select>
+      <button class="quiet">Save</button></form>
+    <span class="src"></span></div>
+  
+  <div class="note qitem" data-platform="Substack"><strong>Why I still make spoons by hand</strong> <span class="tag">Substack</span> <span class="tag">Craft</span>
+    <form method="post" action="#" style="display:inline"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="Q-W2">
+      <select name="status" aria-label="Status"><option selected>Idea</option><option >Drafting</option><option >Queued</option><option >Scheduled</option><option >Published</option></select>
+      <button class="quiet">Save</button></form>
+    <span class="src"></span></div>
+  
+  <div class="note qitem" data-platform="Blog"><strong>A month of small bench wins</strong> <span class="tag">Blog</span> <span class="tag">Other</span>
+    <form method="post" action="#" style="display:inline"><input type="hidden" name="op" value="status"><input type="hidden" name="id" value="Q-W3">
+      <select name="status" aria-label="Status"><option >Idea</option><option >Drafting</option><option selected>Queued</option><option >Scheduled</option><option >Published</option></select>
+      <button class="quiet">Save</button></form>
+    <span class="src"></span></div>
+  
+  <p class="src">Idea: 1 · Drafting: 1 · Queued: 1 · Scheduled: 0 · Published: 0</p>
 </div>
 
 <h2 id="shipped">What shipped</h2>
 <div class="card">
-<ul></ul>
+<ul><li><strong>2026-01-13</strong> Substack: What I am making this winter <span class="src">(Substack)</span></li><li><strong>2026-01-06</strong> Blog: Setting up the bench <span class="src">(Blog)</span></li></ul>
 <form method="post" action="#" class="tellrow"><input type="date" name="date"><input type="text" name="what" placeholder="What shipped?" style="flex:2" required><button>Add</button></form>
 </div>
 

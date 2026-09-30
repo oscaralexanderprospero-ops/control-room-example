@@ -6,7 +6,7 @@
 </head><body data-page="media"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:34 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:40 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -15,11 +15,11 @@
     <span class="navlabel">Daily</span>
     <a href="plan.html" class="" data-tour="nav-plan">My day</a>
     <a href="plan.html" class="">Today</a>
-    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
     <a href="post.html" class="" data-tour="nav-post">Post</a>
     <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
     <a href="business.html" class="" data-tour="nav-business">Business</a>
-    <a href="requests.html" class="">Told the team</a>
+    <a href="requests.html" class="">Told the team<span class="n soft">1</span></a>
   </nav>
   <nav>
     <span class="navlabel">Work</span>
@@ -118,7 +118,7 @@ function omsMenu(open, remember){
 })();
 </script>
 <main>
-<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+<a class="nowbar" href="plan.html#now">Now: <strong>Draft W-01: Blog: What I learned oiling my first walnut piece</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
 
 
 
@@ -170,16 +170,16 @@ function omsMenu(open, remember){
 
   </div>
 
-  <div class="note"><strong>Maple spoon set</strong> <span class="src">Queue Q-03 · video · spoons-flatlay.jpg</span>
+  <div class="note"><strong>Cherry cutting board (sold)</strong> <span class="src">Queue Q-07 · video · cherry-board-sold.mp4</span>
     <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag warn">… In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
     
     
 <details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
   <form method="post" action="#" class="stack">
     <input type="hidden" name="skill" value="video-post-multiplatform">
-    <input type="hidden" name="detail" value="queue Q-03, Maple spoon set, files: spoons-flatlay.jpg">
+    <input type="hidden" name="detail" value="queue Q-07, Cherry cutting board (sold), files: cherry-board-sold.mp4">
     <input type="hidden" name="back" value="/media">
-    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-03, Maple spoon set, files: spoons-flatlay.jpg</div>
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-07, Cherry cutting board (sold), files: cherry-board-sold.mp4</div>
     <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
     <div class="switch"><span class="src">Who does it:</span>
       <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
@@ -190,9 +190,102 @@ function omsMenu(open, remember){
 <details class="skillbtn" ><summary>✦ Find the communities for it</summary>
   <form method="post" action="#" class="stack">
     <input type="hidden" name="skill" value="platform-community-surfaces">
-    <input type="hidden" name="detail" value="queue Q-03, Maple spoon set, files: spoons-flatlay.jpg">
+    <input type="hidden" name="detail" value="queue Q-07, Cherry cutting board (sold), files: cherry-board-sold.mp4">
     <input type="hidden" name="back" value="/media">
-    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-03, Maple spoon set, files: spoons-flatlay.jpg</div>
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-07, Cherry cutting board (sold), files: cherry-board-sold.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+  <div class="note"><strong>Ash bookends</strong> <span class="src">Queue Q-06 · video · ash-bookends-photos-1.jpg</span>
+    <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag warn">… In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-06, Ash bookends, files: ash-bookends-photos-1.jpg">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-06, Ash bookends, files: ash-bookends-photos-1.jpg</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-06, Ash bookends, files: ash-bookends-photos-1.jpg">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-06, Ash bookends, files: ash-bookends-photos-1.jpg</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+  <div class="note"><strong>Ash bookends</strong> <span class="src">Queue Q-05 · Inbox item A-03 · video · ash-bookends-finish.mp4</span>
+    <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag ">✓ In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-05, Inbox item A-03, Ash bookends, files: ash-bookends-finish.mp4">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-05, Inbox item A-03, Ash bookends, files: ash-bookends-finish.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-05, Inbox item A-03, Ash bookends, files: ash-bookends-finish.mp4">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-05, Inbox item A-03, Ash bookends, files: ash-bookends-finish.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+  <div class="note"><strong>Maple spoon set</strong> <span class="src">Queue Q-03 · Inbox item A-04 · video · spoons-flatlay.jpg</span>
+    <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag ">✓ In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-03, Inbox item A-04, Maple spoon set, files: spoons-flatlay.jpg">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-03, Inbox item A-04, Maple spoon set, files: spoons-flatlay.jpg</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-03, Inbox item A-04, Maple spoon set, files: spoons-flatlay.jpg">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-03, Inbox item A-04, Maple spoon set, files: spoons-flatlay.jpg</div>
     <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
     <div class="switch"><span class="src">Who does it:</span>
       <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
