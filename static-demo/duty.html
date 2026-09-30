@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="static/style.css">
+</head><body data-page="duty"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+<header class="top">
+  <span class="brand">Control Room</span>
+  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="plan.html" class="" data-tour="nav-plan">My day</a>
+    <a href="plan.html" class="">Today</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="post.html" class="" data-tour="nav-post">Post</a>
+    <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
+    <a href="business.html" class="" data-tour="nav-business">Business</a>
+    <a href="requests.html" class="">Told the team</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="writing.html" class="" data-tour="nav-writing">Writing</a>
+    <a href="media.html" class="">Video and photo</a>
+    <a href="shop.html" class="">Listings</a>
+    <a href="marketing.html" class="" data-tour="nav-marketing">Marketing</a>
+    <a href="stats.html" class="">Stats and SEO</a>
+    <a href="public.html" class="">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="duty.html" class="on" data-tour="nav-duty">Who's on duty</a>
+    <a href="team.html" class="" data-tour="nav-team">Team table</a>
+    <a href="skills.html" class="" data-tour="nav-skills">Skills</a>
+    <a href="reviews.html" class="">Reviews</a>
+    <a href="files.html" class="" data-tour="nav-files">Files</a>
+    <a href="ward.html" class="" data-tour="nav-ward">The Ward</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light ok"></span>Defender on
+      </span>
+    <span>Passes: <strong>Claude</strong> · Review: <strong>ChatGPT</strong></span>
+    <span>
+      <span class="light bad"></span>Not linked to the Sheet
+        <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>
+      
+    </span>
+    <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    
+  </div>
+  <details class="tell" data-tour="tell" >
+    <summary>Tell the team</summary>
+    
+    <form method="post" action="#">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty (Claude)</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+
+
+
+
+
+<h1>Who's on duty</h1>
+<div class="notice">This switch is the <strong>only</strong> one you need. Claude's and Kimi's scheduled tasks both stay on, and every run checks here first: whoever has the passes does the work, and the other stops quietly. Kimi's tasks run only while the Kimi app is open. Your rule: give the passes to whichever has more free tokens with less time left to spend them.</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="src">Scheduled passes are run by</div>
+    <div class="bigcell">Claude</div>
+    <div class="src">since 2026-01-10 · set by Sam</div>
+    <form method="post" action="#">
+      <input type="hidden" name="which" value="passes">
+      <label for="r1">Why (optional)</label><input type="text" id="r1" name="reason" placeholder="e.g. Claude is out of tokens">
+      <div class="switch">
+        <button name="to" value="Kimi" >Switch to Kimi</button>
+        <button name="to" value="ChatGPT" onclick="return confirm('ChatGPT works in ChatGPT, not on this laptop, so it cannot run the scheduled passes itself. While ChatGPT is on passes, Claude\'s and Kimi\'s passes stop. Switch anyway?')">Switch to ChatGPT</button></div>
+      <p class="src">ChatGPT can take passes only as far as ChatGPT reaches: it reads the Sheet, it can't upload or run anything on this laptop.</p>
+    </form>
+  </div>
+  <div class="card">
+    <div class="src">Review duty is with</div>
+    <div class="bigcell">ChatGPT</div>
+    <div class="src">since 2026-01-10 · set by Sam</div>
+    <form method="post" action="#">
+      <input type="hidden" name="which" value="review">
+      <label for="r2">Why (optional)</label><input type="text" id="r2" name="reason" placeholder="e.g. ChatGPT is short on tokens">
+      <div class="switch">
+        <button name="to" value="Claude">Switch to Claude</button></div>
+    </form>
+  </div>
+</div>
+
+<h2>The three agents</h2>
+<div class="grid">
+
+<div class="card agent">
+  <h3>Claude</h3><div class="src">Anthropic</div>
+  <p>Runs the scheduled passes when on duty. Makes the changes (site code, drafts from his words). Can cover review when ChatGPT is short on tokens.</p>
+  <span class="tag">on passes</span>
+  
+  
+  <div class="src">Source: SITE CHANNEL v2, SAM DECIDED 24 Sep 2026; KIMI HANDOVER Part 2</div>
+</div>
+
+<div class="card agent">
+  <h3>Kimi</h3><div class="src">Moonshot AI, in Kimi Work</div>
+  <p>Covers the scheduled passes, uploads and Etsy drafts when the passes are switched to Kimi here. His words only: tidies and cuts his dictation, fills mechanical fields. No essays.</p>
+  
+  
+  
+  <div class="src">Source: KIMI HANDOVER Part 2, rulings of 26 Sep 2026; always-on tasks 28 Sep 2026</div>
+</div>
+
+<div class="card agent">
+  <h3>ChatGPT</h3><div class="src">ChatGPT, OpenAI</div>
+  <p>Brainstorms, critiques and reviews. Reads Drive through ChatGPT&#39;s Google Drive connection. Never rewrites his words. Claude can cover when ChatGPT is short on tokens.</p>
+  
+  <span class="tag">on review</span>
+  
+  <div class="src">Source: SITE CHANNEL v2, SAM DECIDED 24 Sep 2026</div>
+</div>
+
+</div>
+
+<h2>Scheduled passes</h2>
+
+<details class="skillbtn" ><summary>✦ Add, retime or change a pass</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="scheduled-passes">
+    <input type="hidden" name="detail" value="">
+    <input type="hidden" name="back" value="/duty">
+    <div class="src">Your plug-in skill <span class="mono">scheduled-passes</span>: holds every scheduled pass: what it does, what it reads first and where it stops. Say what you want changed.</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+<p class="src">From the Tasks tab. "Last run" fills in when an agent reports a pass through the app.</p>
+<div class="wrap"><table>
+<tr><th>Agent</th><th>Pass</th><th>When (Central)</th><th>Days</th><th>State</th><th>Last run</th><th>Notes</th></tr>
+
+
+<tr><td>Claude</td><td>Photo pass</td><td>11:30am, 5:30pm</td><td>daily</td>
+<td><span class="tag ">on</span></td>
+<td><span class="src">not reported yet</span></td>
+<td class="src">
+  
+  <form method="post" action="#"><input type="hidden" name="job" value="Photo pass">
+    <input type="hidden" name="what" value="Run the scheduled pass &quot;Photo pass&quot; now, exactly as the plug-in skill example-plugin:scheduled-passes describes it (Kimi: its oms-scheduled-passes skill), then report with POST /api/pass-run.">
+    <button class="quiet" style="padding:0 .5rem">Ask Claude to run it now</button></form></td></tr>
+
+
+<tr><td>Claude</td><td>Video upload</td><td>10am, 1pm, 4pm</td><td>daily</td>
+<td><span class="tag ">on</span></td>
+<td><span class="src">not reported yet</span></td>
+<td class="src">
+  
+  <form method="post" action="#"><input type="hidden" name="job" value="Video upload">
+    <input type="hidden" name="what" value="Run the scheduled pass &quot;Video upload&quot; now, exactly as the plug-in skill example-plugin:scheduled-passes describes it (Kimi: its oms-scheduled-passes skill), then report with POST /api/pass-run.">
+    <button class="quiet" style="padding:0 .5rem">Ask Claude to run it now</button></form></td></tr>
+
+
+<tr><td>Claude</td><td>Blog draft-and-stage</td><td>9:00am</td><td>Mon, Wed, Fri</td>
+<td><span class="tag ">on</span></td>
+<td><span class="src">not reported yet</span></td>
+<td class="src">
+  
+  <form method="post" action="#"><input type="hidden" name="job" value="Blog draft-and-stage">
+    <input type="hidden" name="what" value="Run the scheduled pass &quot;Blog draft-and-stage&quot; now, exactly as the plug-in skill example-plugin:scheduled-passes describes it (Kimi: its oms-scheduled-passes skill), then report with POST /api/pass-run.">
+    <button class="quiet" style="padding:0 .5rem">Ask Claude to run it now</button></form></td></tr>
+
+
+<tr><td>Claude</td><td>Link and bio audit</td><td>7:00pm</td><td>1st of month</td>
+<td><span class="tag warn">off</span></td>
+<td><span class="src">not reported yet</span></td>
+<td class="src">Example: switched off.
+  </td></tr>
+
+</table></div>
+
+<h2>Duty changes</h2>
+<div class="wrap"><table><tr><th>When</th><th>Which</th><th>From</th><th>To</th><th>By</th><th>Why</th></tr>
+<tr><td>2026-01-10</td><td>Scheduled passes on duty</td><td>Kimi</td>
+<td>Claude</td><td>Sam</td><td class="src">Example hand-over</td></tr>
+</table></div>
+
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="static/app.js"></script>
+</body></html>

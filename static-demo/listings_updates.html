@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="static/style.css">
+</head><body data-page="shop"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+<header class="top">
+  <span class="brand">Control Room</span>
+  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="plan.html" class="" data-tour="nav-plan">My day</a>
+    <a href="plan.html" class="">Today</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="post.html" class="" data-tour="nav-post">Post</a>
+    <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
+    <a href="business.html" class="" data-tour="nav-business">Business</a>
+    <a href="requests.html" class="">Told the team</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="writing.html" class="" data-tour="nav-writing">Writing</a>
+    <a href="media.html" class="">Video and photo</a>
+    <a href="shop.html" class="on">Listings</a>
+    <a href="marketing.html" class="" data-tour="nav-marketing">Marketing</a>
+    <a href="stats.html" class="">Stats and SEO</a>
+    <a href="public.html" class="">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="duty.html" class="" data-tour="nav-duty">Who's on duty</a>
+    <a href="team.html" class="" data-tour="nav-team">Team table</a>
+    <a href="skills.html" class="" data-tour="nav-skills">Skills</a>
+    <a href="reviews.html" class="">Reviews</a>
+    <a href="files.html" class="" data-tour="nav-files">Files</a>
+    <a href="ward.html" class="" data-tour="nav-ward">The Ward</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light ok"></span>Defender on
+      </span>
+    <span>Passes: <strong>Claude</strong> · Review: <strong>ChatGPT</strong></span>
+    <span>
+      <span class="light bad"></span>Not linked to the Sheet
+        <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>
+      
+    </span>
+    <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    
+  </div>
+  <details class="tell" data-tour="tell" >
+    <summary>Tell the team</summary>
+    
+    <form method="post" action="#">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty (Claude)</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+
+
+
+
+
+<h1 data-tour="lu-title">Listings that need updating</h1>
+<p class="lead">Every listing with anything missing or wrong: 0 still open. Open one, fill in what you know (type or speak), and press Save. "Save and hand it over" sends it to Claude to put on Etsy. Live listings stop at Etsy's edit screen for your Save click, and drafts stay drafts.</p>
+
+<p class="src">One Save saves every listing you've changed on this page. The only measurements that matter: height (most important), thickness, and weight on canes and staves.</p>
+
+<div class="switch" id="lufilter" data-tour="lu-filter">
+  <button type="button" onclick="luFilter(this,'')">All (0)</button>
+  
+  <button type="button" class="quiet" onclick="luFilter(this,'__done')">Done</button>
+</div>
+<p class="src">Sources: Missing Specifications Tracker (15 Aug), Etsy Claims Sweep (17 Aug), Master Tracker (17 Sep), shop ledger (27 Sep). Only what's confirmed missing is asked for: a blank the tracker left ("not yet measured"), or a note saying UNKNOWN or MEASURE. Listings with nothing confirmed missing are left off.</p>
+
+<div class="bulkbar" data-group="listings">
+  <label><input type="checkbox" class="bulkall"> Select all showing</label> <span class="src bulkcount"></span>
+  <button type="button" data-op="listing-handover" data-confirm="Hand the {n} selected listings to Claude to update on Etsy? Save your changes first; live listings stop at Etsy's edit screen for your Save.">Hand selected over</button>
+</div>
+
+
+<script>
+// Save on any listing saves every listing he changed on this page.
+function luChanged(f){
+  return [...f.querySelectorAll('input[type=text], textarea')].some(i => i.value !== i.defaultValue);
+}
+function luData(f){
+  const values = {};
+  f.querySelectorAll('input[type=text]').forEach(i => values[i.name] = i.value);
+  return { id: f.dataset.id, values: values, notes: f.querySelector('textarea[name=notes]').value };
+}
+function luSubmit(form, e){
+  const btn = e.submitter;
+  const plainSave = btn && btn.name === 'ready' && btn.value === '';
+  // with "hand over" or "done", this listing still goes through its own button;
+  // every other changed listing is saved first
+  const others = [...document.querySelectorAll('.luform')].filter(f => luChanged(f) && (plainSave || f !== form));
+  if (!others.length && !plainSave) return true;
+  e.preventDefault();
+  fetch('/act/listing-update-all', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ listings: others.map(luData) }) })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => {
+      if (plainSave) { location.href = '/listings/updates?done=saved&n=' + d.saved; return; }
+      const h = document.createElement('input'); h.type = 'hidden'; h.name = btn.name; h.value = btn.value;
+      form.appendChild(h); form.onsubmit = null; form.submit();
+    })
+    .catch(() => alert("Couldn't save just now. Nothing is lost on this page; press Save again."));
+  return false;
+}
+function luFilter(btn, need){
+  document.querySelectorAll('#lufilter button').forEach(b=>b.className='quiet'); btn.className='';
+  document.querySelectorAll('.lu').forEach(el=>{
+    const done = el.dataset.status === 'done';
+    el.hidden = need === '__done' ? !done : (done || (need && !el.dataset.needs.split('; ').includes(need)));
+  });
+}
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■'; btn.onclick = () => r.stop(); r.start();
+}
+</script>
+
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="static/app.js"></script>
+</body></html>

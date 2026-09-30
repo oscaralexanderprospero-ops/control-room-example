@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="static/style.css">
+</head><body data-page="writing"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+<header class="top">
+  <span class="brand">Control Room</span>
+  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="plan.html" class="" data-tour="nav-plan">My day</a>
+    <a href="plan.html" class="">Today</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="post.html" class="" data-tour="nav-post">Post</a>
+    <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
+    <a href="business.html" class="" data-tour="nav-business">Business</a>
+    <a href="requests.html" class="">Told the team</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="writing.html" class="on" data-tour="nav-writing">Writing</a>
+    <a href="media.html" class="">Video and photo</a>
+    <a href="shop.html" class="">Listings</a>
+    <a href="marketing.html" class="" data-tour="nav-marketing">Marketing</a>
+    <a href="stats.html" class="">Stats and SEO</a>
+    <a href="public.html" class="">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="duty.html" class="" data-tour="nav-duty">Who's on duty</a>
+    <a href="team.html" class="" data-tour="nav-team">Team table</a>
+    <a href="skills.html" class="" data-tour="nav-skills">Skills</a>
+    <a href="reviews.html" class="">Reviews</a>
+    <a href="files.html" class="" data-tour="nav-files">Files</a>
+    <a href="ward.html" class="" data-tour="nav-ward">The Ward</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light ok"></span>Defender on
+      </span>
+    <span>Passes: <strong>Claude</strong> · Review: <strong>ChatGPT</strong></span>
+    <span>
+      <span class="light bad"></span>Not linked to the Sheet
+        <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>
+      
+    </span>
+    <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    
+  </div>
+  <details class="tell" data-tour="tell" >
+    <summary>Tell the team</summary>
+    
+    <form method="post" action="#">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty (Claude)</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+
+
+
+
+
+<h1 data-tour="writing-title">Writing</h1>
+<p class="lead">All your writing: essays, the books and the craft. Capture ideas, open any document to edit, and see what's waiting and what's owed.</p>
+
+
+
+
+<p><button type="button" onclick="edOpen()">✎ Open the document you're working on</button></p>
+<div id="ed" class="ed-back" hidden>
+  <div class="ed-box" role="dialog" aria-modal="true" aria-labelledby="ed-name">
+    <div class="ed-head">
+      <div><div class="src" id="ed-kind">Document</div><strong id="ed-name">Example document</strong>
+        <div class="src" id="ed-where"></div></div>
+      <div class="switch">
+        <button type="button" onclick="edSaveAll()">Save</button>
+        <button type="button" class="quiet" id="ed-gdoc" onclick="edGdoc()">Open in Google Docs &#8599;</button>
+        <button type="button" class="quiet" onclick="edClose()">Close</button>
+      </div>
+    </div>
+    
+    <div class="switch" id="ed-to"><span class="src">Who makes my edits:</span>
+      <button type="button" class="" onclick="edTo(this,'Claude')">Claude</button><button type="button" class="quiet" onclick="edTo(this,'Kimi')">Kimi</button><button type="button" class="quiet" onclick="edTo(this,'ChatGPT')">ChatGPT</button></div>
+    <p class="src" id="ed-status">Loading…</p>
+    <div id="ed-body" class="ed-body"></div>
+    <p class="src" id="ed-help"></p>
+  </div>
+</div>
+
+
+<section class="card" id="capture" data-tour="capture">
+  <h2 style="margin-top:0">Capture and staging <span class="src">0 staged · 0 approved</span></h2>
+  <p class="src">Write or speak while your hands are busy. Your words are kept exactly as they come out. Send them to a new piece, or into a section of any document. Approve a capture and Claude takes it from there, tidying only grammar and false starts.</p>
+  
+  <form method="post" action="#">
+    <div class="lugrid">
+      <label>What it's about<select name="category">
+        <optgroup label="Craft"><option>The bench</option><option>Working with AI</option></optgroup><optgroup label="Books"><option>Spoon carving guide</option></optgroup><optgroup label="Other"><option>Personal note</option><option>Something else</option></optgroup></select></label>
+      <label>Where it goes<select name="doc" id="capdoc" onchange="capDoc(this.value)">
+        <option value="new" selected>A new piece (no document yet)</option>
+        </select></label>
+      <label id="captitle-l">Working title (optional)<input type="text" name="title" id="captitle"></label>
+      <label id="capsec-l" hidden>Section<select name="section" id="capsec"><option>General notes</option></select></label>
+    </div>
+    <div class="tellrow"><textarea name="words" id="capwords" placeholder="Dictated or typed text collects here. Read it over before staging." required></textarea>
+      <button type="button" class="quiet" onclick="speakInto('capwords', this)">🎤 Speak</button></div>
+    <p><button>Stage it</button></p>
+  </form>
+  
+  
+</section>
+
+
+<details class="skillbtn" ><summary>✦ Build an essay or post from my words</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="longform-essay-multiplatform">
+    <input type="hidden" name="detail" value="">
+    <input type="hidden" name="back" value="/writing">
+    <div class="src">Your plug-in skill <span class="mono">longform-essay-multiplatform</span>: sources your own words, fact-checks every claim, and cuts it for each platform. Say which capture, answer or document to build from. The draft comes to your Inbox.</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+
+<h2>Drafts waiting on you</h2>
+
+
+<h2 data-tour="prompts">Questions you owe (your positions)</h2>
+<p class="src">Pieces are built only from positions you have stated; where there is no stated position, nothing can be built. Your answer is saved word for word and the piece is stitched from it. <em>(example ledger A2 (your 10 Sep rule))</em></p>
+
+
+<h2>Publishing rhythm</h2>
+<div class="wrap"><table><tr><th>What</th><th>Who</th><th>State</th><th>Source</th></tr>
+</table></div>
+
+<h2 id="library">Library: open any of your writings</h2>
+<div class="card" data-tour="library">
+  <p class="src">0 documents in Books and Longform, Listing Copy and Publishing Plans. "Open to edit" opens it in Google Docs, where you can change anything. "Edit here" opens it section by section below.</p>
+  <div class="switch" id="libareas"><button type="button" onclick="libArea(this,'')">All</button>
+    </div>
+  <div class="tellrow"><input type="text" id="libsearch" placeholder="Search by title (e.g. bench, spoons)" oninput="libFilter()">
+    <label class="src" style="font-weight:400"><input type="checkbox" id="libold" onchange="libFilter()"> show superseded versions</label></div>
+  <div class="lib">
+  
+  </div>
+  <p class="src" id="libmore">Showing the 40 most recently changed. Search to find the rest.</p>
+</div>
+
+<h2 id="studio">Document studio</h2>
+<p><strong>Open now:</strong> Example document · <a href="https://docs.google.com/document/d/YOUR-GOOGLE-DOC-ID/edit" target="_blank" rel="noopener">open it in Google Docs to edit directly &#8599;</a></p>
+<div class="card" data-tour="studio">
+  <form method="get" action="writing.html" class="tellrow"><input type="hidden" name="edit" value="1"><label>Open a document to work in<select name="doc" onchange="this.form.submit()">
+    </select></label>
+    <noscript><button>Open</button></noscript></form>
+  
+  <p class="src">0 words in the document. Click a section to write in it. Your drafts save here (and in backups), and each saved change goes as an instruction to the agent on duty, who makes it in the Google Doc on their next check.</p>
+  
+</div>
+
+<h2 id="queue">Publishing queue</h2>
+<div class="card" data-tour="queue">
+  
+  <div class="switch" id="qfilter"><button type="button" class="" onclick="qFilter(this,'All')">All</button><button type="button" class="quiet" onclick="qFilter(this,'Blog')">Blog</button><button type="button" class="quiet" onclick="qFilter(this,'Substack')">Substack</button><button type="button" class="quiet" onclick="qFilter(this,'Facebook')">Facebook</button><button type="button" class="quiet" onclick="qFilter(this,'Book')">Book</button></div>
+  <form method="post" action="#" class="tellrow">
+    <input type="text" name="title" placeholder="Title of the piece..." required style="flex:2">
+    <select name="platform"><option>Blog</option><option>Substack</option><option>Facebook</option><option>Book</option></select>
+    <select name="category"></select>
+    <button>Queue</button></form>
+  
+  <p class="src">Idea: 0 · Drafting: 0 · Queued: 0 · Scheduled: 0 · Published: 0</p>
+</div>
+
+<h2 id="shipped">What shipped</h2>
+<div class="card">
+<ul></ul>
+<form method="post" action="#" class="tellrow"><input type="date" name="date"><input type="text" name="what" placeholder="What shipped?" style="flex:2" required><button>Add</button></form>
+</div>
+
+<h2>Figures never to print</h2>
+<div class="card"><ul></ul></div>
+
+<style>
+.ed-back { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: flex;
+  align-items: flex-start; justify-content: center; padding: 3vh 16px; overflow-y: auto; }
+.ed-back[hidden] { display: none; }
+.ed-box { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius);
+  width: 100%; max-width: 52rem; padding: 1rem 1.25rem; box-sizing: border-box; }
+.ed-head { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap;
+  position: sticky; top: -3vh; background: var(--panel); padding: .5rem 0; z-index: 1; }
+.ed-body h3 { margin: 1.25rem 0 .35rem; }
+.ed-body textarea { width: 100%; box-sizing: border-box; min-height: 6rem; font: inherit; line-height: 1.55;
+  resize: vertical; }
+.ed-changed { color: var(--amber); }
+.ed-click { cursor: pointer; }
+</style>
+<script>
+const ED = { doc: "YOUR-GOOGLE-DOC-ID", to: "Claude", mode: '', item: null, link: '',
+             timers: {}, touched: {}, last: {}, poll: null };
+const ED_HELP = {
+  doc: "Type straight in; your words are kept safe as you go. Press Save to send your changes to the agent you picked, who makes them in the Google Doc on their next check. The document re-reads itself every minute, so you'll see the edit land.",
+  capture: "Type straight in; your words are kept safe as you go. Press Save to keep this version as your capture. If it's already approved, Save also sends it to the agent you picked.",
+  draft: "Type straight in; your words are kept safe as you go. Press Save to send your edited draft to the agent you picked, who uses it word for word."
+};
+function edTo(btn, a){
+  document.querySelectorAll('#ed-to button').forEach(b => b.className = 'quiet'); btn.className = '';
+  ED.to = a;
+}
+function edReset(mode){
+  Object.values(ED.timers).forEach(clearTimeout);
+  Object.assign(ED, { mode: mode, timers: {}, touched: {}, last: {} });
+  document.getElementById('ed-body').innerHTML = '';
+  document.getElementById('ed-status').textContent = 'Loading…';
+  document.getElementById('ed-gdoc').hidden = mode !== 'doc';
+  clearInterval(ED.poll); ED.poll = null;
+}
+function edOpen(){
+  if (!ED.doc) return;
+  if (ED.mode !== 'doc') edReset('doc');
+  document.getElementById('ed-help').textContent = ED_HELP.doc;
+  document.getElementById('ed').hidden = false;
+  try { sessionStorage.removeItem('edClosed'); } catch(e) {}
+  edLoad();
+  if (!ED.poll) ED.poll = setInterval(edLoad, 60000);
+}
+function edOpenItem(id){
+  edReset('item'); ED.item = id;
+  document.getElementById('ed').hidden = false;
+  fetch('/studio/item?id=' + encodeURIComponent(id)).then(r => r.json()).then(d => {
+    if (d.error) { document.getElementById('ed-status').textContent = "Couldn't open this one."; return; }
+    document.getElementById('ed-kind').textContent = d.kind === 'capture' ? 'Capture' : 'Draft waiting on you';
+    document.getElementById('ed-name').textContent = d.name;
+    document.getElementById('ed-where').textContent = d.where;
+    document.getElementById('ed-help').textContent = ED_HELP[d.kind];
+    const body = document.getElementById('ed-body');
+    const note = document.createElement('div'); note.className = 'src ed-changed'; note.textContent = d.note;
+    const t = document.createElement('textarea'); t.id = 'ed-item'; t.value = d.text;
+    t.setAttribute('aria-label', d.where);
+    t.addEventListener('input', () => { ED.touched[t.id] = true; edGrow(t); edSave(t); });
+    body.append(note, t); edGrow(t); t.focus();
+    document.getElementById('ed-status').textContent = d.status ? 'Status: ' + d.status + '.' : '';
+  }).catch(() => { document.getElementById('ed-status').textContent = "Couldn't reach the app just now."; });
+}
+function edClose(){
+  document.getElementById('ed').hidden = true;
+  clearInterval(ED.poll); ED.poll = null;
+  if (ED.mode === 'doc') { try { sessionStorage.setItem('edClosed', ED.doc); } catch(e) {} }
+}
+function edGdoc(){ window.open(ED.link, 'omsgdoc', 'width=900,height=1000'); }
+function edGrow(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight + 4) + 'px'; }
+function edLoad(){
+  const st = document.getElementById('ed-status');
+  fetch('/studio/live?doc=' + encodeURIComponent(ED.doc)).then(r => r.json()).then(d => {
+    if (d.error) { st.textContent = "Couldn't re-read the document just now; your words are safe. (" + d.error + ")"; return; }
+    ED.link = d.link;
+    document.getElementById('ed-kind').textContent = 'Document';
+    document.getElementById('ed-name').textContent = d.name;
+    document.getElementById('ed-where').textContent = d.sections.length + ' section' + (d.sections.length === 1 ? '' : 's') + ' · Google Doc';
+    const body = document.getElementById('ed-body');
+    d.sections.forEach((s, i) => {
+      const id = 'ed-s' + i;
+      let t = document.getElementById(id);
+      if (!t) {
+        const h = document.createElement('h3'); h.textContent = s.title;
+        const loc = document.createElement('div'); loc.className = 'src';
+        loc.textContent = 'Section ' + (i + 1) + ' of ' + d.sections.length + ' in "' + d.name + '"';
+        const note = document.createElement('div'); note.className = 'src ed-changed'; note.id = id + '-n';
+        t = document.createElement('textarea'); t.id = id; t.dataset.section = s.title;
+        t.setAttribute('aria-label', s.title + ', in ' + d.name);
+        t.value = s.draft || s.text;
+        t.addEventListener('input', () => { ED.touched[id] = true; edGrow(t); edSave(t); });
+        body.append(h, loc, note, t);
+      } else if (!ED.touched[id] && !s.draft) {
+        t.value = s.text;                       // untouched: keep showing what's in the doc now
+      } else if (ED.last[id] !== undefined && ED.last[id] !== s.text) {
+        document.getElementById(id + '-n').textContent =
+          'The Google Doc changed in this part since you started. Your words here are kept.';
+      }
+      ED.last[id] = s.text;
+      edGrow(t);
+    });
+    st.textContent = 'Read from Google Docs at ' + d.read_at + '.';
+  }).catch(() => { st.textContent = "Couldn't reach the app just now; your words are safe."; });
+}
+function edPost(t, send){
+  // one textarea, kept safe (send=false) or saved and sent (send=true)
+  const url = ED.mode === 'doc' ? '/studio/autosave' : '/studio/item-save';
+  const body = ED.mode === 'doc'
+    ? { doc: ED.doc, section: t.dataset.section, text: t.value, to: ED.to, send: send }
+    : { id: ED.item, text: t.value, to: ED.to, send: send };
+  return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function edSave(t){
+  clearTimeout(ED.timers[t.id]);
+  ED.timers[t.id] = setTimeout(() => {
+    edPost(t, false).then(d => { document.getElementById('ed-status').textContent =
+        'Kept safe at ' + d.saved_at + '. Press Save when you are ready.'; })
+      .catch(() => { document.getElementById('ed-status').textContent = 'Not kept yet; it will try again when you type.'; });
+  }, 2000);
+}
+function edSaveAll(){
+  const st = document.getElementById('ed-status');
+  const ts = Object.keys(ED.touched).map(id => document.getElementById(id)).filter(Boolean);
+  if (!ts.length) { st.textContent = 'Nothing changed yet.'; return; }
+  ts.forEach(t => clearTimeout(ED.timers[t.id]));
+  st.textContent = 'Saving…';
+  Promise.all(ts.map(t => edPost(t, true))).then(rs => {
+    const reqs = [...new Set(rs.map(d => d.request).filter(Boolean))];
+    const what = ED.mode === 'doc'
+      ? ts.length + ' changed section' + (ts.length === 1 ? '' : 's') + ' of "' + document.getElementById('ed-name').textContent + '"'
+      : document.getElementById('ed-where').textContent.split(' · ')[0];
+    st.textContent = 'Saved at ' + rs[0].saved_at + ': ' + what + '.' +
+      (reqs.length ? ' Sent to ' + ED.to + ' (' + reqs.join(', ') + '); they make it on their next check.' : '');
+  }).catch(() => { st.textContent = "Not saved: couldn't reach the app. Your words are still here; press Save again."; });
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !document.getElementById('ed').hidden) edClose(); });
+
+(function(){
+  let closed = null; try { closed = sessionStorage.getItem('edClosed'); } catch(e) {}
+  // a document he just picked always opens; otherwise it pops up unless he closed it this visit
+  if (false || closed !== ED.doc) edOpen();
+})();
+
+let libAreaSel = '';
+function libArea(btn, a){
+  document.querySelectorAll('#libareas button').forEach(b=>b.className='quiet'); btn.className='';
+  libAreaSel = a; libFilter();
+}
+function libFilter(){
+  const q = document.getElementById('libsearch').value.trim().toLowerCase();
+  const old = document.getElementById('libold').checked;
+  let shown = 0;
+  document.querySelectorAll('.libitem').forEach(el=>{
+    const ok = (!q || el.dataset.name.includes(q)) && (old || el.dataset.state !== 'superseded')
+      && (!libAreaSel || el.dataset.area === libAreaSel);
+    el.hidden = !ok || (!q && !libAreaSel && shown >= 40); if(!el.hidden) shown++;
+  });
+  document.getElementById('libmore').hidden = !!q || !!libAreaSel;
+}
+function capDoc(v){
+  const isNew = v === 'new';
+  document.getElementById('captitle-l').hidden = !isNew;
+  document.getElementById('capsec-l').hidden = isNew;
+  if (!isNew) loadSections(v);
+}
+function loadSections(doc){
+  fetch('/studio/sections?doc='+encodeURIComponent(doc)).then(r=>r.json()).then(list=>{
+    const s = document.getElementById('capsec'); s.innerHTML='';
+    list.forEach(t=>{const o=document.createElement('option'); o.textContent=t; s.appendChild(o);});
+  });
+}
+function qFilter(btn, p){
+  document.querySelectorAll('#qfilter button').forEach(b=>b.className='quiet'); btn.className='';
+  document.querySelectorAll('.qitem').forEach(el=>{ el.style.display = (p==='All' || el.dataset.platform===p) ? '' : 'none'; });
+}
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){btn.textContent='Speaking not available';return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤 Speak'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■ Stop'; btn.onclick = () => r.stop(); r.start();
+}
+</script>
+
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="static/app.js"></script>
+</body></html>

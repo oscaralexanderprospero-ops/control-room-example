@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="static/style.css">
+</head><body data-page="stats"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+<header class="top">
+  <span class="brand">Control Room</span>
+  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="plan.html" class="" data-tour="nav-plan">My day</a>
+    <a href="plan.html" class="">Today</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="post.html" class="" data-tour="nav-post">Post</a>
+    <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
+    <a href="business.html" class="" data-tour="nav-business">Business</a>
+    <a href="requests.html" class="">Told the team</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="writing.html" class="" data-tour="nav-writing">Writing</a>
+    <a href="media.html" class="">Video and photo</a>
+    <a href="shop.html" class="">Listings</a>
+    <a href="marketing.html" class="" data-tour="nav-marketing">Marketing</a>
+    <a href="stats.html" class="on">Stats and SEO</a>
+    <a href="public.html" class="">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="duty.html" class="" data-tour="nav-duty">Who's on duty</a>
+    <a href="team.html" class="" data-tour="nav-team">Team table</a>
+    <a href="skills.html" class="" data-tour="nav-skills">Skills</a>
+    <a href="reviews.html" class="">Reviews</a>
+    <a href="files.html" class="" data-tour="nav-files">Files</a>
+    <a href="ward.html" class="" data-tour="nav-ward">The Ward</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light ok"></span>Defender on
+      </span>
+    <span>Passes: <strong>Claude</strong> · Review: <strong>ChatGPT</strong></span>
+    <span>
+      <span class="light bad"></span>Not linked to the Sheet
+        <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>
+      
+    </span>
+    <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    
+  </div>
+  <details class="tell" data-tour="tell" >
+    <summary>Tell the team</summary>
+    
+    <form method="post" action="#">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty (Claude)</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+
+
+
+
+
+<h1 data-tour="stats-title">Stats and SEO</h1>
+<p class="lead">How each platform is doing, and the words that get your pieces found. Bluesky and Pixelfed update themselves; add the others when you look them up, or the agents add them on their passes. Every number shows its date and where it came from.</p>
+
+<h2>Stats</h2>
+<div class="card">
+  <form method="post" action="#" style="display:inline"><input type="hidden" name="op" value="refresh"><button class="quiet">Update Bluesky and Pixelfed now</button></form>
+  <div class="wrap" style="margin-top:.6rem"><table>
+  <tr><th>Platform</th><th>What</th><th>Number</th><th>Change</th><th>When · source</th></tr>
+  <tr><td colspan="5">No numbers yet.</td></tr>
+  </table></div>
+  <details open><summary>Add a number</summary>
+    <form method="post" action="#" class="lugrid">
+      <input type="hidden" name="op" value="add">
+      <label>Platform<select name="platform"><option>Etsy</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Bluesky</option><option>Pixelfed</option><option>Threads</option><option>Tumblr</option><option>Substack</option><option>WordPress</option><option>Ko-fi</option><option>Discord</option><option>Website</option></select></label>
+      <label>What<select name="metric"><option>Followers</option><option>Views</option><option>Sales</option><option>Active listings</option><option>Favorites</option><option>Subscribers</option><option>Visits</option></select></label>
+      <label>Number<input type="text" name="value" required inputmode="numeric"></label>
+      <label>Where you read it<input type="text" name="source" placeholder="e.g. Etsy shop stats, last 30 days"></label>
+      <div class="wide"><button>Add</button></div>
+    </form></details>
+</div>
+
+<h2>Keyword and tag bank</h2>
+<div class="card">
+  <p class="src">The words you use to get found, by product line. Agents use these when they fill tags on listings and posts.</p>
+  <div class="grid">
+    <div><h3 style="margin:.2rem 0">All pieces</h3>
+      <div class="src">none yet</div></div>
+  
+    <div><h3 style="margin:.2rem 0">Canes</h3>
+      <div class="src">none yet</div></div>
+  
+    <div><h3 style="margin:.2rem 0">Staves</h3>
+      <div class="src">none yet</div></div>
+  
+    <div><h3 style="margin:.2rem 0">Wands</h3>
+      <div class="src">none yet</div></div>
+  
+    <div><h3 style="margin:.2rem 0">Pendants</h3>
+      <div class="src">none yet</div></div>
+  
+    <div><h3 style="margin:.2rem 0">Books</h3>
+      <div class="src">none yet</div></div>
+  
+    <div><h3 style="margin:.2rem 0">Other</h3>
+      <div class="src">none yet</div></div>
+  </div>
+  <form method="post" action="#" class="lugrid" style="margin-top:.6rem">
+    <input type="hidden" name="op" value="add"><input type="hidden" name="kind" value="Tag">
+    <label>Keyword or tag<input type="text" name="text" required placeholder="e.g. hand carved walking cane"></label>
+    <label>Product line<select name="line"><option>All pieces</option><option>Canes</option><option>Staves</option><option>Wands</option><option>Pendants</option><option>Books</option><option>Other</option></select></label>
+    <label>Where it's used<input type="text" name="platforms" placeholder="e.g. Etsy, Blog"></label>
+    <div class="wide"><button>Add to the bank</button></div>
+  </form>
+</div>
+
+<h2>SEO to-do</h2>
+<div class="card">
+  <p>Nothing to do.</p>
+  <form method="post" action="#" class="lugrid">
+    <input type="hidden" name="op" value="add"><input type="hidden" name="kind" value="Task">
+    <label class="wide">New SEO task<input type="text" name="text" required></label>
+    <label>Platform<input type="text" name="platforms"></label>
+    <label>Why<input type="text" name="why"></label>
+    <div class="wide"><button>Add</button></div>
+  </form>
+  <p class="src">Seasonal changes (switch on for Samhain, switch back after) live in <a href="marketing.html">Marketing</a>.</p>
+</div>
+
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="static/app.js"></script>
+</body></html>

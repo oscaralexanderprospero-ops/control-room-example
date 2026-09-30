@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="static/style.css">
+</head><body data-page="media"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+<header class="top">
+  <span class="brand">Control Room</span>
+  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="plan.html" class="" data-tour="nav-plan">My day</a>
+    <a href="plan.html" class="">Today</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox</a>
+    <a href="post.html" class="" data-tour="nav-post">Post</a>
+    <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
+    <a href="business.html" class="" data-tour="nav-business">Business</a>
+    <a href="requests.html" class="">Told the team</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="writing.html" class="" data-tour="nav-writing">Writing</a>
+    <a href="media.html" class="on">Video and photo</a>
+    <a href="shop.html" class="">Listings</a>
+    <a href="marketing.html" class="" data-tour="nav-marketing">Marketing</a>
+    <a href="stats.html" class="">Stats and SEO</a>
+    <a href="public.html" class="">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="duty.html" class="" data-tour="nav-duty">Who's on duty</a>
+    <a href="team.html" class="" data-tour="nav-team">Team table</a>
+    <a href="skills.html" class="" data-tour="nav-skills">Skills</a>
+    <a href="reviews.html" class="">Reviews</a>
+    <a href="files.html" class="" data-tour="nav-files">Files</a>
+    <a href="ward.html" class="" data-tour="nav-ward">The Ward</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light ok"></span>Defender on
+      </span>
+    <span>Passes: <strong>Claude</strong> · Review: <strong>ChatGPT</strong></span>
+    <span>
+      <span class="light bad"></span>Not linked to the Sheet
+        <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Reconnect Google</button></form>
+      
+    </span>
+    <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    
+  </div>
+  <details class="tell" data-tour="tell" >
+    <summary>Tell the team</summary>
+    
+    <form method="post" action="#">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty (Claude)</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+<a class="nowbar" href="plan.html#now">Now: <strong>Blocked on you: 2 things waiting. Clear whatever you can</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+
+
+
+
+
+<h1 data-tour="media-title">Video and photo</h1>
+<p class="lead">Every video and photo post from start to finish: get the files, give your words, prep, edit, approve, post and file. Your words are the caption on every platform, word for word; you cut them to fit in your Inbox. Nothing posts without your click.</p>
+
+
+
+
+
+<h2 id="jobs">What's happening now</h2>
+<div class="card" id="jobsbox">
+  <p class="src">Nothing running.</p>
+</div>
+
+<h2>Where each post has got to</h2>
+<div class="card">
+
+  <div class="note"><strong>Bench tour clip</strong> <span class="src">Queue Q-04 · video · </span>
+    <div class="switch"><span class="tag warn">… Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag warn">… In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-04, Bench tour clip, files: ">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-04, Bench tour clip, files: </div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-04, Bench tour clip, files: ">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-04, Bench tour clip, files: </div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+  <div class="note"><strong>Maple spoon set</strong> <span class="src">Queue Q-03 · video · spoons-flatlay.jpg</span>
+    <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag warn">… In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-03, Maple spoon set, files: spoons-flatlay.jpg">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-03, Maple spoon set, files: spoons-flatlay.jpg</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-03, Maple spoon set, files: spoons-flatlay.jpg">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-03, Maple spoon set, files: spoons-flatlay.jpg</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+  <div class="note"><strong>Walnut walking stick</strong> <span class="src">Queue Q-02 · video · walnut-stick-handle.mp4</span>
+    <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag warn">… In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-02, Walnut walking stick, files: walnut-stick-handle.mp4">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-02, Walnut walking stick, files: walnut-stick-handle.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-02, Walnut walking stick, files: walnut-stick-handle.mp4">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-02, Walnut walking stick, files: walnut-stick-handle.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+  <div class="note"><strong>Walnut walking stick</strong> <span class="src">Queue Q-01 · video · walnut-stick-detail.mp4</span>
+    <div class="switch"><span class="tag ">✓ Files on the laptop</span><span class="tag warn">… Prepped</span><span class="tag warn">… In your Inbox</span><span class="tag warn">… Approved</span><span class="tag warn">… Posted</span><span class="tag warn">… Filed</span></div>
+    
+    
+<details class="skillbtn" ><summary>✦ Post it with your video skill</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="video-post-multiplatform">
+    <input type="hidden" name="detail" value="queue Q-01, Walnut walking stick, files: walnut-stick-detail.mp4">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">video-post-multiplatform</span>: posts the approved video across your platforms: captions check, routes, visibility, verification, pacing first. It gets: queue Q-01, Walnut walking stick, files: walnut-stick-detail.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+    
+<details class="skillbtn" ><summary>✦ Find the communities for it</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="platform-community-surfaces">
+    <input type="hidden" name="detail" value="queue Q-01, Walnut walking stick, files: walnut-stick-detail.mp4">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">platform-community-surfaces</span>: says which groups and communities this post should also land in, and which are gated, hostile or dead. It gets: queue Q-01, Walnut walking stick, files: walnut-stick-detail.mp4</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+  </div>
+
+<p class="src">Approve in your <a href="inbox.html">Inbox</a>; post from <a href="post.html">Post</a>.</p>
+</div>
+
+<h2>Build videos</h2>
+<div class="card">
+  <p class="src">Your build-video skill keeps one Descript project per piece, collects the short clips you film while working, and cuts the longform creation video when you ask.</p>
+  
+<details class="skillbtn" ><summary>✦ Add footage to a piece, or make its build video</summary>
+  <form method="post" action="#" class="stack">
+    <input type="hidden" name="skill" value="process-longform">
+    <input type="hidden" name="detail" value="">
+    <input type="hidden" name="back" value="/media">
+    <div class="src">Your plug-in skill <span class="mono">process-longform</span>: files your new clips into that piece&#39;s Descript project, or cuts and publishes the creation video. Say which piece and what you want.</div>
+    <textarea name="note" placeholder="Anything to add, in your words (optional)" style="min-height:3rem"></textarea>
+    <div class="switch"><span class="src">Who does it:</span>
+      <button name="agent" value="Claude">Claude</button><button class="quiet" name="agent" value="Kimi">Kimi</button><button class="quiet" name="agent" value="ChatGPT">ChatGPT</button></div>
+  </form>
+</details>
+
+</div>
+
+<h2>Start a new post</h2>
+
+<section class="card">
+  <h3 style="margin-top:0">1. Get the files</h3>
+  <p class="src">From a dated "pics/vids" folder in your Drive. Files already on the laptop are copied, not downloaded twice. They land in <span class="mono">Batches\&lt;code&gt;\originals</span>.</p>
+  <p class="src">Couldn't list your Drive folders just now: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.</p>
+  <form method="post" action="#" class="tellrow">
+    <input type="hidden" name="op" value="drive">
+    <label style="flex:2">Drive folder<select name="folder" required></select></label>
+    <label>Batch code<input type="text" name="batch" required placeholder="e.g. 27" style="width:7rem"></label>
+    <button>Get the files</button>
+  </form>
+</section>
+
+<form method="post" action="#" id="startform">
+<input type="hidden" name="op" value="start">
+<section class="card">
+  <h3 style="margin-top:0">2. Pick the files for this post</h3>
+  <p class="src">Tick one video, or one or more photos. Each shows whether it's prepped. Prep only ever re-encodes a video (never a crop) or makes resized copies of a photo; your originals are never changed.</p>
+  <p class="src">No videos or photos on the laptop yet. Get some from Drive above.</p>
+</section>
+
+<section class="card">
+  <h3 style="margin-top:0">3. Your words</h3>
+  <label>What piece is this?<input type="text" name="piece" required placeholder="e.g. 27A wild plum wand, first reveal"></label>
+  <label for="mwords">Your caption, in your own words (typed, spoken, or the video's own spoken words)</label>
+  <div class="tellrow"><textarea name="words" id="mwords" required></textarea>
+    <button type="button" class="quiet" onclick="speakInto('mwords', this)">🎤 Speak</button></div>
+</section>
+
+<section class="card">
+  <h3 style="margin-top:0">4. Where it goes</h3>
+  <p class="src" id="platnote">Tick files first; the platforms that take that kind of post light up.</p>
+  <div class="switch">
+  <label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Pixelfed"> Pixelfed</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Bluesky"> Bluesky</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo=""><input type="checkbox" name="platform" value="YouTube"> YouTube</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo=""><input type="checkbox" name="platform" value="YouTube title"> YouTube title</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo=""><input type="checkbox" name="platform" value="TikTok"> TikTok</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Facebook"> Facebook</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Instagram"> Instagram</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Instagram Story"> Instagram Story</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Threads"> Threads</label><label class="src plat-pick" style="font-weight:400" data-video="y" data-photo="y"><input type="checkbox" name="platform" value="Tumblr"> Tumblr</label><label class="src plat-pick" style="font-weight:400" data-video="" data-photo="y"><input type="checkbox" name="platform" value="Etsy"> Etsy</label>
+  </div>
+  <p class="src">Video goes straight out through your uploader on Pixelfed (and Bluesky once it's set up). Photos and every other platform go to the agent on duty or to your click, and the Post page says which. TikTok's description is always left blank; Facebook never gets hashtags (your posting skills).</p>
+  <label>Tags (added at the end where the platform has tags; not Facebook, TikTok or Etsy)<input type="text" name="tags" placeholder="e.g. woodworking handmade walkingcane ritualtools WitchSky"></label>
+  <p class="src">Your skills say tags on every post, on every platform that has them. For an occult or ritual post on Bluesky, include one of WitchSky, OccultSky, PaganSky, SpiritSky or EsotericSky.</p>
+  <label>Alt text: describe each photo, one line per photo, in order (Bluesky needs it)<textarea name="alt" style="min-height:4rem" placeholder="What the photo actually shows"></textarea></label>
+  <label>Instagram feed only: where did this already do well? (a link or a few words)<input type="text" name="earned" placeholder="Feed posts are earned: about twice your usual on another platform"></label>
+  <p><button>Send to my Inbox</button></p>
+</section>
+</form>
+
+<h2 id="communities">Communities: where posts also land</h2>
+<div class="card">
+  <p class="src">From your community-surfaces skill. Joining, replying and restacking are not posts; a Note or a community-tagged thread is, and goes through pacing.</p>
+  
+  <details open><summary>Active <span class="src">4</span></summary>
+    <ul><li><strong>Facebook</strong>: Groups: woodworking category <span class="src">· Share from the published post&#39;s own page into each group, one at a time.</span></li><li><strong>Bluesky</strong>: Curated feeds <span class="src">· Tag the post; feeds also match on alt text.</span></li><li><strong>Tumblr</strong>: Woodworking community <span class="src">· Tag AI-assisted content.</span></li><li><strong>Instagram</strong>: Collab posts <span class="src">· Up to 5 collaborators.</span></li></ul>
+  </details>
+  <details ><summary>Pending <span class="src">1</span></summary>
+    <ul><li><strong>Facebook</strong>: Example group awaiting approval <span class="src">· Join questionnaire not answered yet.</span></li></ul>
+  </details>
+  <details ><summary>Gated <span class="src">2</span></summary>
+    <ul><li><strong>YouTube</strong>: Memberships <span class="src">· Needs a subscriber and watch-time minimum.</span></li><li><strong>TikTok</strong>: Fan Groups <span class="src">· Needs a follower minimum.</span></li></ul>
+  </details>
+  <details ><summary>Hostile <span class="src">1</span></summary>
+    <ul><li><strong>Etsy</strong>: Teams and Forums <span class="src">· Useless as promotion.</span></li></ul>
+  </details>
+</div>
+
+<form method="post" action="#" id="oneform" hidden>
+  <input type="hidden" name="op"><input type="hidden" name="f"><input type="hidden" name="words"><input type="hidden" name="to">
+</form>
+<div id="editbox" class="ed-back" hidden>
+  <div class="ed-box" role="dialog" aria-modal="true" aria-labelledby="editname">
+    <div class="src">Ask for an edit to</div><strong id="editname"></strong>
+    <p class="src">Say what you want done (trim, captions burned in, music, a shorter cut). It goes to the agent you pick in your words. The full frame is kept unless you say otherwise, and the original is never changed.</p>
+    <div class="tellrow"><textarea id="editwords"></textarea><button type="button" class="quiet" onclick="speakInto('editwords', this)">🎤</button></div>
+    <div class="switch"><span class="src">Who does it:</span><button type="button" onclick="sendEdit('Claude')">Claude</button><button type="button" onclick="sendEdit('Kimi')">Kimi</button><button type="button" onclick="sendEdit('ChatGPT')">ChatGPT</button>
+      <button type="button" class="quiet" onclick="document.getElementById('editbox').hidden=true">Cancel</button></div>
+  </div>
+</div>
+
+<style>
+.mediagrid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); margin: .6rem 0; }
+.mitem { border: 1px solid var(--line); border-radius: 8px; padding: .5rem; }
+.mitem img, .mitem video { width: 100%; max-height: 16rem; object-fit: contain; background: #000; border-radius: 6px; }
+.plat-pick.off { opacity: .4; }
+.ed-back { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; }
+.ed-back[hidden] { display: none; }
+.ed-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); width: 100%; max-width: 40rem; padding: 1rem 1.25rem; }
+</style>
+<script>
+let editFile = '';
+function mone(op, btn){ const o = document.getElementById('oneform'); o.op.value = op; o.f.value = btn.parentElement.dataset.f; o.submit(); }
+function medit(btn){ editFile = btn.parentElement.dataset.f; document.getElementById('editname').textContent = btn.parentElement.dataset.name; document.getElementById('editbox').hidden = false; }
+function sendEdit(to){
+  const w = document.getElementById('editwords').value.trim(); if (!w) return;
+  const o = document.getElementById('oneform'); o.op.value = 'edit'; o.f.value = editFile; o.words.value = w; o.to.value = to; o.submit();
+}
+function useWords(btn){ const t = document.getElementById('mwords'); t.value = btn.dataset.words; t.scrollIntoView({behavior: 'smooth', block: 'center'}); }
+function mpick(){
+  const picked = [...document.querySelectorAll('#startform input[name=f]:checked')].map(i => i.dataset.kind);
+  const kind = picked.length ? picked[0] : '';
+  const mixed = new Set(picked).size > 1;
+  document.getElementById('platnote').textContent = mixed ? 'A post is either one video or photos, not both. Untick one kind.'
+    : kind ? 'Platforms that take a ' + kind + ' post:' : 'Tick files first; the platforms that take that kind of post light up.';
+  document.querySelectorAll('.plat-pick').forEach(l => {
+    const ok = !kind || l.dataset[kind] === 'y';
+    l.classList.toggle('off', !ok); l.querySelector('input').disabled = !ok;
+    if (!ok) l.querySelector('input').checked = false;
+  });
+}
+function speakInto(id, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if(!SR){btn.textContent='Speaking not available';return;}
+  const box = document.getElementById(id); const r = new SR(); r.lang='en-US'; r.continuous=true;
+  const start = box.value ? box.value + ' ' : ''; let said='';
+  r.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) said += e.results[i][0].transcript+' '; box.value = start + said.trim(); };
+  r.onend = () => { btn.textContent='🎤 Speak'; btn.onclick = () => speakInto(id, btn); };
+  btn.textContent='■ Stop'; btn.onclick = () => r.stop(); r.start();
+}
+// keep "What's happening now" current without reloading the page (your typing is safe)
+setInterval(() => {
+  if (!document.querySelector('#jobsbox .tag.warn')) return;
+  fetch('/media').then(r => r.text()).then(h => {
+    const n = new DOMParser().parseFromString(h, 'text/html').getElementById('jobsbox');
+    if (n) document.getElementById('jobsbox').innerHTML = n.innerHTML;
+  }).catch(() => {});
+}, 10000);
+</script>
+
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="static/app.js"></script>
+</body></html>
