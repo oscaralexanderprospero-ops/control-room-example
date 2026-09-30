@@ -195,12 +195,64 @@ function showFile(btn) {
       const ids = picks().filter(p => p.checked).map(p => p.value);
       if (!ids.length) return;
       if (b.dataset.confirm && !confirm(b.dataset.confirm.replace("{n}", ids.length))) return;
+      if (bar.hasAttribute("data-inplace")) {
+        const body = new URLSearchParams(); body.append("op", b.dataset.op); ids.forEach(id => body.append("ids", id));
+        bar.querySelectorAll("button[data-op]").forEach(x => x.disabled = true);
+        fetch("/act/bulk", { method: "POST", headers: { "X-Requested-With": "fetch" }, body })
+          .then(r => r.json()).then(d => {
+            (d.ids || []).forEach(id => settleCard(document.getElementById(id), "Recorded."));
+            count.textContent = d.n + " done";
+            refresh();
+          }).catch(() => { count.textContent = "That did not go through. Try once more."; refresh(); });
+        return;
+      }
       const f = document.createElement("form"); f.method = "post"; f.action = "/act/bulk";
       const add = (k, v) => { const i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = v; f.appendChild(i); };
       add("op", b.dataset.op); ids.forEach(id => add("ids", id));
       const note = bar.querySelector('input[name="note"]'); if (note) add("note", note.value);
       document.body.appendChild(f); f.submit();
     }));
+    bar.addEventListener("recount", refresh);
     refresh();
   });
 })();
+
+// Answering in place: a form marked data-inplace posts in the background, the card
+// says what was recorded, then folds away. The page never reloads or jumps.
+function settleCard(card, message) {
+  if (!card || card.dataset.settled) return;
+  card.dataset.settled = "1";
+  const pick = card.querySelector(".bulkpick"); if (pick) pick.checked = false;
+  card.classList.add("settled");
+  card.innerHTML = '<div class="recorded">&#10003; ' + message.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])) + '</div>';
+  const badge = document.querySelector('nav a[href="/blocked"] .n, a[href="/blocked"] .n');
+  const left = document.querySelectorAll(".card[id]:not(.settled)").length;
+  if (badge) { if (left) badge.textContent = left; else badge.remove(); }
+  setTimeout(() => {
+    card.style.maxHeight = card.offsetHeight + "px";
+    requestAnimationFrame(() => card.classList.add("folding"));
+    setTimeout(() => { card.remove(); document.querySelectorAll(".bulkbar").forEach(b => b.dispatchEvent(new Event("recount")));
+      const clear = document.getElementById("allclear"); if (clear && !document.querySelector(".card[id]")) { clear.hidden = false; document.querySelectorAll(".bulkbar").forEach(b => b.hidden = true); } }, 450);
+  }, 1800);
+}
+
+document.addEventListener("submit", ev => {
+  const f = ev.target;
+  if (!f.matches || !f.matches("form[data-inplace]")) return;
+  ev.preventDefault();
+  if (f.dataset.busy) return;                       // a second click while the first is going does nothing
+  const card = f.closest(".card");
+  const buttons = card ? card.querySelectorAll("button") : f.querySelectorAll("button");
+  const typed = f.querySelector('input[name="text"]');
+  if (typed && !typed.value.trim()) { typed.focus(); return; }
+  f.dataset.busy = "1"; buttons.forEach(b => b.disabled = true);
+  const fd = new URLSearchParams(new FormData(f));
+  fetch(f.action, { method: "POST", headers: { "X-Requested-With": "fetch" }, body: fd })
+    .then(r => r.json()).then(d => {
+      if (d.ok) { settleCard(card, d.message || "Recorded."); }
+      else { delete f.dataset.busy; buttons.forEach(b => b.disabled = false); alert(d.message || "That did not go through."); }
+    }).catch(() => {
+      delete f.dataset.busy; buttons.forEach(b => b.disabled = false);
+      alert("That did not go through. Nothing was recorded. Try once more.");
+    });
+});

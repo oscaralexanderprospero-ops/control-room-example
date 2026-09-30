@@ -3,10 +3,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Control Room</title>
 <link rel="stylesheet" href="static/style.css">
-</head><body data-page="today"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+</head><body data-page="today"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:25 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -126,8 +126,6 @@ function omsMenu(open, remember){
 
 <h1>Today</h1>
 <p class="lead">What's queued, what went out today, and how many more each platform can take.</p>
-
-<div class="notice warn"><a href="blocked.html">2 things blocked on you, each with its fix</a></div>
 
 
 <h2>Due today</h2>
@@ -396,7 +394,6 @@ function omsMenu(open, remember){
 </tr>
 
 </table></div>
-<p class="src">Things the import couldn't settle are now in <a href="blocked.html">Blocked on you</a>, each with buttons to answer or hand to an agent.</p>
 
 </main>
 <div id="tour" class="tour" hidden role="dialog" aria-live="polite">

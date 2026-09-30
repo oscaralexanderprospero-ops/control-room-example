@@ -4,7 +4,6 @@ Screens are for Sam' browser (entered through the desktop shortcut).
 /api/* is for Claude and Kimi, each with its own key. Anything else gets the
 Address and a not-authorized notice, and is logged as Suspicious.
 """
-import os
 import datetime
 import functools
 import json
@@ -653,7 +652,9 @@ def act_bulk():
     ids = [i[:40] for i in request.form.getlist("ids")][:200]
     note = request.form.get("note", "").strip()[:1000]
     n = 0
+    okids = []
     for i in ids:
+        n0 = n
         if op == "approve":
             if approvals.load(i):
                 approvals.approve(i, None); n += 1
@@ -685,9 +686,13 @@ def act_bulk():
             marketing.hand(i); n += 1
         else:
             abort(400)
+        if n > n0:
+            okids.append(i)
     if op == "post" and n:
         threading.Thread(target=posting.run_due, daemon=True).start()
     actionlog.log("Sam", f"Did '{op}' for {n} selected item(s): {', '.join(ids[:20])}")
+    if request.headers.get("X-Requested-With") == "fetch":
+        return jsonify(ok=True, n=n, ids=okids)
     back = (request.referrer or url_for("today")).split("?")[0].split("#")[0]
     return redirect(back + f"?done=bulk&n={n}")
 
@@ -733,20 +738,34 @@ def act_send_back():
 @sam_only
 def act_fix():
     aid, kind, value = request.form["id"], request.form["kind"], request.form["value"]
+    ajax = request.headers.get("X-Requested-With") == "fetch"
+    row = record.find("Approvals", "ID", aid)
+    if row and row.get("Status", "").lower() != "waiting":
+        # a repeat click on something already answered: do nothing twice
+        if ajax:
+            return jsonify(ok=True, already=True, message="Already recorded: " + (row.get("Decision") or row.get("Status", "")))
+        return redirect(request.referrer or url_for("blocked"))
+    said = value
     if kind == "answer":
         fixes.decide(aid, value[:500])
     elif kind == "hand":
-        fixes.hand(aid, value[:1000])
+        sid = fixes.hand(aid, value[:1000])
+        said = f"Handed to {record.duty().get('passes') or 'Claude'} ({sid})"
     elif kind == "app":
-        fixes.app_fix(aid, value)
+        said = fixes.app_fix(aid, value)
     elif kind == "typed":
         text = request.form.get("text", "").strip()
-        if text:
-            fixes.decide(aid, text[:1000])
-            row = record.find("Approvals", "ID", aid)
-            src = (row or {}).get("Source", "")
-            if src.startswith("Team table T-"):
-                team_post(src.split()[-1], "", "Sam", text)   # answer goes back to the team
+        if not text:
+            if ajax:
+                return jsonify(ok=False, message="Type your answer first.")
+            return redirect(request.referrer or url_for("blocked"))
+        fixes.decide(aid, text[:1000])
+        said = text[:120]
+        src = (row or {}).get("Source", "")
+        if src.startswith("Team table T-"):
+            team_post(src.split()[-1], "", "Sam", text)   # answer goes back to the team
+    if ajax:
+        return jsonify(ok=True, message="Recorded: " + said)
     return redirect(request.referrer or url_for("blocked"))
 
 

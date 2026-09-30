@@ -3,10 +3,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Control Room</title>
 <link rel="stylesheet" href="static/style.css">
-</head><body data-page="blocked"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>
+</head><body data-page="blocked"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:21 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:25 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -125,15 +125,14 @@ function omsMenu(open, remember){
 
 
 <h1 data-tour="blocked-title">Blocked on you</h1>
-<p class="lead">Each item needs one thing from you. The fix is right under it. Captions and drafts are in the <a href="inbox.html">Inbox</a>.</p>
+<p class="lead">Each item needs one thing from you. The fix is right under it.</p>
 
 
-<div class="bulkbar" data-group="blocked">
+<div class="bulkbar" data-group="blocked" data-inplace>
   <label><input type="checkbox" class="bulkall"> Select all</label> <span class="src bulkcount"></span>
   <button type="button" data-op="hand" data-confirm="Hand the {n} selected items to Claude? Items without a hand-over button are skipped.">Hand selected to Claude</button>
   <button type="button" class="quiet" data-op="done" data-confirm="Mark the {n} selected items done? Items without a Done button are skipped.">Mark selected done</button>
 </div>
-<p class="src">Selecting only works for the items' own "hand to" and "Done" buttons. Decisions that need your answer still need your pick.</p>
 
 
 
@@ -143,7 +142,7 @@ function omsMenu(open, remember){
   <div class="fixrow">
   
     
-      <form method="post" action="#" style="display:inline">
+      <form method="post" action="#" data-inplace style="display:inline">
         <input type="hidden" name="id" value="A-01"><input type="hidden" name="kind" value="answer">
         <input type="hidden" name="value" value="Yes">
         <button class="">Yes, publish it as planned</button>
@@ -151,7 +150,7 @@ function omsMenu(open, remember){
     
   
     
-      <form method="post" action="#" style="display:inline">
+      <form method="post" action="#" data-inplace style="display:inline">
         <input type="hidden" name="id" value="A-01"><input type="hidden" name="kind" value="answer">
         <input type="hidden" name="value" value="No">
         <button class="">No</button>
@@ -159,7 +158,7 @@ function omsMenu(open, remember){
     
   
   </div>
-  <form method="post" action="#" class="typed">
+  <form method="post" action="#" class="typed" data-inplace>
     <input type="hidden" name="id" value="A-01"><input type="hidden" name="kind" value="typed"><input type="hidden" name="value" value="">
     <input type="text" name="text" placeholder="Or type your answer in your own words" aria-label="Your answer">
     <button class="quiet">Send</button>
@@ -178,7 +177,7 @@ function omsMenu(open, remember){
     
   
     
-      <form method="post" action="#" style="display:inline">
+      <form method="post" action="#" data-inplace style="display:inline">
         <input type="hidden" name="id" value="A-02"><input type="hidden" name="kind" value="answer">
         <input type="hidden" name="value" value="Done">
         <button class="">Done</button>
@@ -186,7 +185,7 @@ function omsMenu(open, remember){
     
   
   </div>
-  <form method="post" action="#" class="typed">
+  <form method="post" action="#" class="typed" data-inplace>
     <input type="hidden" name="id" value="A-02"><input type="hidden" name="kind" value="typed"><input type="hidden" name="value" value="">
     <input type="text" name="text" placeholder="Or type your answer in your own words" aria-label="Your answer">
     <button class="quiet">Send</button>
@@ -194,6 +193,7 @@ function omsMenu(open, remember){
   <div class="src">Raised 2026-01-14<span class="stale">STALE</span> · example ledger</div>
 </div>
 
+<p id="allclear" hidden>Nothing is waiting on you.</p>
 
 </main>
 <div id="tour" class="tour" hidden role="dialog" aria-live="polite">

@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block body %}
 <h1 data-tour="blocked-title">Blocked on you</h1>
-<p class="lead">Each item needs one thing from you. The fix is right under it. Captions and drafts are in the <a href="/inbox">Inbox</a>.</p>
+<p class="lead">Each item needs one thing from you. The fix is right under it.</p>
 {% set pickable = items|selectattr('buttons')|list %}
 {% if pickable %}
-<div class="bulkbar" data-group="blocked">
+<div class="bulkbar" data-group="blocked" data-inplace>
   <label><input type="checkbox" class="bulkall"> Select all</label> <span class="src bulkcount"></span>
   <button type="button" data-op="hand" data-confirm="Hand the {n} selected items to {{ duty.passes }}? Items without a hand-over button are skipped.">Hand selected to {{ duty.passes }}</button>
   <button type="button" class="quiet" data-op="done" data-confirm="Mark the {n} selected items done? Items without a Done button are skipped.">Mark selected done</button>
 </div>
-<p class="src">Selecting only works for the items' own "hand to" and "Done" buttons. Decisions that need your answer still need your pick.</p>
 {% endif %}
 {% for a in items %}
 {% set can = a.buttons|selectattr(1, 'equalto', 'hand')|list or a.buttons|selectattr(2, 'equalto', 'Done')|list %}
@@ -21,7 +20,7 @@
     {% if kind == 'open' %}
       <a class="btn quiet" href="{{ value }}" target="_blank" rel="noopener">{{ label }} &#8599;</a>
     {% else %}
-      <form method="post" action="/act/fix" style="display:inline">
+      <form method="post" action="/act/fix" data-inplace style="display:inline">
         <input type="hidden" name="id" value="{{ a.ID }}"><input type="hidden" name="kind" value="{{ kind }}">
         <input type="hidden" name="value" value="{{ value }}">
         <button class="{{ 'quiet' if kind == 'hand' else '' }}">{{ label }}{% if kind == 'hand' %} (hand to {{ duty.passes }}){% endif %}</button>
@@ -29,13 +28,13 @@
     {% endif %}
   {% endfor %}
   </div>
-  <form method="post" action="/act/fix" class="typed">
+  <form method="post" action="/act/fix" class="typed" data-inplace>
     <input type="hidden" name="id" value="{{ a.ID }}"><input type="hidden" name="kind" value="typed"><input type="hidden" name="value" value="">
     <input type="text" name="text" placeholder="Or type your answer in your own words" aria-label="Your answer">
     <button class="quiet">Send</button>
   </form>
   <div class="src">Raised {{ a.Raised }}{% if stale(a.Raised) %}<span class="stale">STALE</span>{% endif %} · {{ a.Source }}</div>
 </div>
-{% else %}<p>Nothing is waiting on you.</p>
 {% endfor %}
+<p id="allclear" {% if items %}hidden{% endif %}>Nothing is waiting on you.</p>
 {% endblock %}

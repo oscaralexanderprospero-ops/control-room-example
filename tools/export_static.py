@@ -30,6 +30,12 @@ BANNER = ('<div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14
           'text-align:center">Read-only demo with made-up data. Buttons do nothing here. '
           '<a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div>')
 
+NOTE = ("<script>function ro(e){e.preventDefault();e.stopImmediatePropagation();"
+        "alert('Read-only demo: buttons do not change anything here.');}"
+        "document.addEventListener('submit',ro,true);"
+        "document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);"
+        "</script>")
+
 seen, todo = set(), ["/plan"]
 while todo:
     p = todo.pop()
@@ -53,7 +59,7 @@ while todo:
         return f'{m.group(1)}="{name_of(url)}"'
     html = re.sub(r'(href|action)="(/[^"#]*)"', fix, html)
     html = re.sub(r'(src)="(/static/[^"]*)"', lambda m: f'src="{m.group(2)[1:]}"', html)
-    html = re.sub(r"(<body[^>]*>)", r"\1" + BANNER, html, count=1)
+    html = re.sub(r"(<body[^>]*>)", lambda m: m.group(1) + BANNER + NOTE, html, count=1)
     (OUT / name_of(p)).write_text(html, encoding="utf-8")
 
 (OUT / "index.html").write_text('<meta http-equiv="refresh" content="0; url=plan.html">', encoding="utf-8")

@@ -2,8 +2,8 @@
 {% block body %}
 <h1>Today</h1>
 <p class="lead">What's queued, what went out today, and how many more each platform can take.</p>
-{% if inbox_count or blocked_count %}
-<div class="notice warn">{% if inbox_count %}<a href="/inbox">{{ inbox_count }} draft{{ 's' if inbox_count > 1 }} waiting in your Inbox</a>{% endif %}{% if inbox_count and blocked_count %} · {% endif %}{% if blocked_count %}<a href="/blocked">{{ blocked_count }} thing{{ 's' if blocked_count > 1 }} blocked on you, each with its fix</a>{% endif %}</div>
+{% if inbox_count %}
+<div class="notice warn"><a href="/inbox">{{ inbox_count }} draft{{ 's' if inbox_count > 1 }} waiting in your Inbox</a></div>
 {% endif %}
 
 <h2>Due today</h2>
@@ -75,5 +75,4 @@
 </tr>
 {% endfor %}
 </table></div>
-<p class="src">Things the import couldn't settle are now in <a href="/blocked">Blocked on you</a>, each with buttons to answer or hand to an agent.</p>
 {% endblock %}
