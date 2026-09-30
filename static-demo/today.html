@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link rel="stylesheet" href="static/style.css">
+</head><body data-page="today"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
+<header class="top">
+  <span class="brand">Control Room</span>
+  <span class="src">Wednesday 30 September 2026, 11:43 AM Central</span>
+  <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
+  <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
+    onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
+  <div class="menu" id="topmenu">
+  <nav data-tour="nav">
+    <span class="navlabel">Daily</span>
+    <a href="plan.html" class="" data-tour="nav-plan">My day</a>
+    <a href="today.html" class="on">Today</a>
+    <a href="inbox.html" class="" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
+    <a href="post.html" class="" data-tour="nav-post">Post</a>
+    <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
+    <a href="business.html" class="" data-tour="nav-business">Business</a>
+    <a href="requests.html" class="">Told the team<span class="n soft">1</span></a>
+  </nav>
+  <nav>
+    <span class="navlabel">Work</span>
+    <a href="writing.html" class="" data-tour="nav-writing">Writing</a>
+    <a href="media.html" class="">Video and photo</a>
+    <a href="shop.html" class="">Listings</a>
+    <a href="marketing.html" class="" data-tour="nav-marketing">Marketing</a>
+    <a href="stats.html" class="">Stats and SEO</a>
+    <a href="public.html" class="">Public page</a>
+  </nav>
+  <nav>
+    <span class="navlabel">Team</span>
+    <a href="duty.html" class="" data-tour="nav-duty">Who's on duty</a>
+    <a href="team.html" class="" data-tour="nav-team">Team table</a>
+    <a href="skills.html" class="" data-tour="nav-skills">Skills</a>
+    <a href="reviews.html" class="">Reviews</a>
+    <a href="files.html" class="" data-tour="nav-files">Files</a>
+    <a href="ward.html" class="" data-tour="nav-ward">The Ward</a>
+  </nav>
+  <div class="strip" data-tour="strip">
+    <span><span class="light ok"></span>Defender on
+      </span>
+    <span>Passes: <strong>Claude</strong> · Review: <strong>ChatGPT</strong></span>
+    <span>
+      <span class="light ok"></span>Demo data (made up)
+      
+      
+    </span>
+    <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Refresh</button></form>
+    
+  </div>
+  <details class="tell" data-tour="tell" >
+    <summary>Tell the team</summary>
+    
+    <form method="post" action="#">
+      <div class="tellrow">
+        <textarea name="words" id="tellwords" placeholder="Say or type what you want changed: operations, a listing, an upload..." required></textarea>
+        <button type="button" class="quiet mic" id="micbtn" title="Speak instead of typing" aria-label="Speak">🎤 Speak</button>
+      </div>
+      <div class="tellrow">
+        <select name="about" aria-label="What it's about">
+          <option value="operations">Operations</option><option value="listing">A listing</option>
+          <option value="upload">An upload</option><option value="other">Something else</option></select>
+        <select name="for" aria-label="Who it's for">
+          <option value="">Whoever is on duty (Claude)</option>
+          <option>Claude</option><option>Kimi</option><option>ChatGPT</option></select>
+        <button>Send to the team</button>
+      </div>
+      <div class="src">Speaking uses Chrome's own speech-to-text (Google hears the audio). Your words are saved exactly as they come out; check them before you press Send.</div>
+    </form>
+  </details>
+  </div>
+</header>
+<script>
+// Folded by default; remembers his choice on this device (works without it too).
+function omsMenu(open, remember){
+  const h = document.querySelector('header.top'), b = document.getElementById('menubtn');
+  h.classList.toggle('open', open);
+  b.setAttribute('aria-expanded', open); b.textContent = open ? '✕ Close' : '☰ Menu';
+  if (remember) { try { localStorage.setItem('omsMenuOpen', open ? '1' : '0'); } catch(e) {} }
+}
+// Every page refreshes itself every 2 minutes, and at once when the date changes,
+// but never while he is in the middle of something: typing, something ticked,
+// a pop-up open, or touched the page in the last minute. Scroll position is kept.
+(function(){
+  const loadedDay = new Date().toDateString();
+  let lastTouch = Date.now();
+  ['keydown', 'mousedown', 'touchstart', 'input', 'wheel'].forEach(e => addEventListener(e, () => lastTouch = Date.now(), true));
+  function busy(){
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if ([...document.querySelectorAll('input[type=text], input[type=url], input:not([type]), textarea')].some(i => i.value !== i.defaultValue)) return true;
+    if (document.querySelector('.bulkpick:checked, .bulkall:checked')) return true;
+    if ([...document.querySelectorAll('#ed, #editbox, #tour')].some(m => !m.hidden)) return true;
+    return Date.now() - lastTouch < 60000;
+  }
+  function refresh(){
+    try { sessionStorage.setItem('omsScroll:' + location.pathname, String(scrollY)); } catch(e) {}
+    location.replace(location.pathname + location.hash);      // drops a one-time "Saved" notice
+  }
+  addEventListener('load', () => {             // the page below the menu has rendered by now
+    try {
+      const y = sessionStorage.getItem('omsScroll:' + location.pathname);
+      if (y !== null) { sessionStorage.removeItem('omsScroll:' + location.pathname); scrollTo(0, +y); }
+    } catch(e) {}
+  });
+  setInterval(() => {
+    const newDay = new Date().toDateString() !== loadedDay;
+    if (!busy() && (newDay || Date.now() - window.omsLoadedAt >= 120000)) refresh();
+  }, 30000);
+  window.omsLoadedAt = Date.now();
+})();
+(function(){
+  let saved = null; try { saved = localStorage.getItem('omsMenuOpen'); } catch(e) {}
+  if (document.querySelector('header.top').classList.contains('open') || saved === '1') omsMenu(true, false);
+})();
+</script>
+<main>
+<a class="nowbar" href="plan.html#now">Now: <strong>Draft W-01: Blog: What I learned oiling my first walnut piece</strong> <span class="src" id="nowfocus"></span> <span class="src">· My day →</span></a>
+
+
+
+
+
+<h1>Today</h1>
+<p class="lead">What's queued, what went out today, and how many more each platform can take.</p>
+
+<div class="notice warn"><a href="inbox.html">2 drafts waiting in your Inbox</a></div>
+
+
+<h2>Due today</h2>
+<div class="card" data-tour="due">
+  
+  <div class="note" style="border-left-color:var(--rust)"><span class="tag bad">overdue since Tue 20 Jan</span>
+    <span class="tag">Writing</span> <a href="/writing#W-01">Draft W-01: Blog: What I learned oiling my first walnut piece</a></div>
+  
+  <div class="note" style="border-left-color:var(--rust)"><span class="tag bad">overdue since Tue 27 Jan</span>
+    <span class="tag">Writing</span> <a href="/writing#W-02">Draft W-02: Essay: Why I still make spoons by hand</a></div>
+  
+  <div class="note" style="border-left-color:var(--rust)"><span class="tag bad">overdue since Thu 22 Jan</span>
+    <span class="tag">Writing</span> <a href="/writing#P-1">Question P-1: Do you oil the inside of a spoon bowl, or leave it raw?</a></div>
+  
+  <p class="src">Worked out fresh from the dates each time the page loads: orders and messages, custom orders, writing, and posts whose time has come.</p>
+</div>
+
+<h2>The next 7 days</h2>
+<div class="cal">
+  <div class="calday"><strong>Wed</strong> <span class="src">30 Sep</span>
+    <div class="calitem"><span class="tag">Claude</span> 9:00am Blog draft-and-stage</div>
+  </div>
+  <div class="calday"><strong>Thu</strong> <span class="src">01 Oct</span>
+    <div class="src">nothing set</div>
+  </div>
+  <div class="calday"><strong>Fri</strong> <span class="src">02 Oct</span>
+    <div class="calitem"><span class="tag">Claude</span> 9:00am Blog draft-and-stage</div>
+  </div>
+  <div class="calday"><strong>Sat</strong> <span class="src">03 Oct</span>
+    <div class="src">nothing set</div>
+  </div>
+  <div class="calday"><strong>Sun</strong> <span class="src">04 Oct</span>
+    <div class="src">nothing set</div>
+  </div>
+  <div class="calday"><strong>Mon</strong> <span class="src">05 Oct</span>
+    <div class="calitem"><span class="tag">Claude</span> 9:00am Blog draft-and-stage</div>
+  </div>
+  <div class="calday"><strong>Tue</strong> <span class="src">06 Oct</span>
+    <div class="src">nothing set</div>
+  </div></div>
+<p class="src">Scheduled posts, writing due dates, marketing dates, order and custom-order deadlines, and the weekly and monthly passes.</p>
+
+<h2>Posts left today, by platform</h2>
+<p class="src">Counted from the Posts tab. Ceilings come from KIMI PROCEDURE 01 and your own rulings; each card names its source. A blank ceiling means no sourced number exists. Floor: one hour between posts to the same platform, 88 minutes preferred.
+<form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Check the platforms now</button></form></p>
+<div class="pace" data-tour="pace">
+
+  <div class="card">
+    <div><strong>Bluesky</strong>
+      </div>
+    <div class="num">5 <span class="src">left</span></div>
+    <div>0 today of 5
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>YouTube</strong>
+      </div>
+    <div class="num">5 <span class="src">left</span></div>
+    <div>0 today of 5
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    <div class="src">This week: 0 of 3 <span class="tag warn">behind</span><br>3 or more a week (example-plugin:platform-posting-pacing)</div>
+    
+    
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>TikTok</strong>
+      </div>
+    <div class="num">5 <span class="src">left</span></div>
+    <div>0 today of 5
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Facebook</strong>
+      </div>
+    <div class="num">5 <span class="src">left</span></div>
+    <div>0 today of 5
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    <div class="src">Most often double-booked.</div>
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Threads</strong>
+      </div>
+    <div class="num">2 <span class="src">left</span></div>
+    <div>0 today of 2
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Instagram</strong>
+      </div>
+    <div class="num">1 <span class="src">left</span></div>
+    <div>0 today of 1
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    <div class="src">This week: 0 of 3 <span class="tag warn">behind</span><br>3 to 5 a week, earned feed posts only (example-plugin:platform-posting-pacing)</div>
+    
+    <div class="src">Stories are separate.</div>
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Instagram Story</strong>
+      </div>
+    <div class="num"></div>
+    <div>0 today
+      </div>
+    
+    
+    <div class="src">Next allowed: no floor</div>
+    
+    
+    
+    
+    <div class="src">Source: Example: daily</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Pixelfed</strong>
+      </div>
+    <div class="num">5 <span class="src">left</span></div>
+    <div>0 today of 5
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Tumblr</strong>
+      </div>
+    <div class="num">3 <span class="src">left</span></div>
+    <div>0 today of 3
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: Example ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Etsy</strong>
+      </div>
+    <div class="num"></div>
+    <div>0 today
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: No ceiling</div>
+  </div>
+
+  <div class="card">
+    <div><strong>WordPress</strong>
+      </div>
+    <div class="num"></div>
+    <div>0 today
+      </div>
+    
+    
+    <div class="src">Next allowed: now</div>
+    
+    
+    
+    
+    <div class="src">Source: No ceiling</div>
+  </div>
+
+</div>
+
+<h2>What went out today</h2>
+<p>Nothing recorded yet today.</p>
+
+<h2>The queue</h2>
+<div class="wrap" data-tour="queue"><table>
+<tr><th>Item</th><th>Platforms left</th><th>Status</th><th>Notes</th><th>Source</th></tr>
+
+<tr>
+<td><strong>Q-01</strong> Walnut walking stick<div class="src">walnut-stick-detail.mp4</div></td>
+<td>Bluesky, YouTube, TikTok</td>
+<td><span class="tag ">in progress</span>
+  </td>
+<td>Example note: waiting on the second clip.</td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-01">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-02</strong> Walnut walking stick<div class="src">walnut-stick-handle.mp4</div></td>
+<td>Instagram, Facebook</td>
+<td><span class="tag ">ready</span>
+  </td>
+<td></td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-02">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-03</strong> Maple spoon set<div class="src">spoons-flatlay.jpg</div></td>
+<td>Pixelfed, Threads</td>
+<td><span class="tag ">waiting on his dictation</span>
+  </td>
+<td>Example: the app asks once and does not nag.</td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-03">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-05</strong> Ash bookends<div class="src">ash-bookends-finish.mp4</div></td>
+<td>Bluesky, YouTube, Instagram</td>
+<td><span class="tag ">ready</span>
+  </td>
+<td>Example: caption is cut from his words, never rewritten.</td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-05">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-06</strong> Ash bookends<div class="src">ash-bookends-photos-1.jpg</div></td>
+<td>Pixelfed, Threads, Tumblr</td>
+<td><span class="tag ">in progress</span>
+  <div class="src">Claimed: Claude</div></td>
+<td>Example: claimed by Claude, photos being prepared.</td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-06">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-07</strong> Cherry cutting board (sold)<div class="src">cherry-board-sold.mp4</div></td>
+<td>Facebook</td>
+<td><span class="tag warn">held</span>
+  </td>
+<td>Example: a sold piece never gets a shop link.</td>
+<td class="src">example ledger<br>as of 2026-01-09<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-07">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+<tr>
+<td><strong>Q-04</strong> Bench tour clip<div class="src"></div></td>
+<td>Tumblr</td>
+<td><span class="tag ">low priority</span>
+  </td>
+<td></td>
+<td class="src">example ledger<br>as of 2026-01-15<span class="stale">STALE</span>
+  <form method="post" action="#"><input type="hidden" name="tab" value="Queue"><input type="hidden" name="key_header" value="ID"><input type="hidden" name="key" value="Q-04">
+  <button class="quiet" style="padding:0 .5rem">Still true</button></form></td>
+</tr>
+
+</table></div>
+
+</main>
+<div id="tour" class="tour" hidden role="dialog" aria-live="polite">
+  <div class="tourbox"><div id="tourtext"></div>
+    <div class="tourbtns"><span id="tourstep" class="src"></span>
+      <button type="button" class="quiet" onclick="Tour.end()">Skip</button>
+      <button type="button" class="quiet" onclick="Tour.move(-1)">Back</button>
+      <button type="button" onclick="Tour.move(1)" id="tournext">Next</button></div></div>
+</div>
+<script src="static/app.js"></script>
+</body></html>

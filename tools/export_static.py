@@ -22,7 +22,7 @@ SKIP = ("/api/", "/media-file", "/listing-photo", "/prep-demo", "/act/", "/studi
 
 
 def name_of(path: str) -> str:
-    path = path.split("?")[0].split("#")[0].strip("/") or "plan"
+    path = path.split("?")[0].split("#")[0].strip("/") or "today"
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", path) + ".html"
 
 

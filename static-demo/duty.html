@@ -6,7 +6,7 @@
 </head><body data-page="duty"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:40 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:43 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -14,7 +14,7 @@
   <nav data-tour="nav">
     <span class="navlabel">Daily</span>
     <a href="plan.html" class="" data-tour="nav-plan">My day</a>
-    <a href="plan.html" class="">Today</a>
+    <a href="today.html" class="">Today</a>
     <a href="inbox.html" class="" data-tour="nav-inbox">Inbox<span class="n">2</span></a>
     <a href="post.html" class="" data-tour="nav-post">Post</a>
     <a href="blocked.html" class="" data-tour="nav-blocked">Blocked on you<span class="n">2</span></a>
