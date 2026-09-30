@@ -34,7 +34,7 @@ NOTE = ("<script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page
         "alert('Read-only demo: buttons do not change anything here.');}"
         "document.addEventListener('submit',ro,true);"
         "document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);"
-        "</script>")
+        "</script><style>#ed{display:none!important}</style>")
 
 seen, todo = set(), ["/plan"]
 while todo:

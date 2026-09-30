@@ -3,10 +3,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Control Room</title>
 <link rel="stylesheet" href="static/style.css">
-</head><body data-page="today"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script>
+</head><body data-page="today"><div style="background:#f6e7b4;color:#3a2c00;padding:8px 14px;font:14px system-ui;text-align:center">Read-only demo with made-up data. Buttons do nothing here. <a href="https://github.com/oscaralexanderprospero-ops/control-room-example">Get the code</a></div><script>try{localStorage.setItem('oms_tour_'+document.body.dataset.page,'99')}catch(e){}function ro(e){e.preventDefault();e.stopImmediatePropagation();alert('Read-only demo: buttons do not change anything here.');}document.addEventListener('submit',ro,true);document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('button[data-op]'))ro(e);},true);</script><style>#ed{display:none!important}</style>
 <header class="top">
   <span class="brand">Control Room</span>
-  <span class="src">Wednesday 30 September 2026, 11:43 AM Central</span>
+  <span class="src">Wednesday 30 September 2026, 11:45 AM Central</span>
   <button class="quiet helpbtn" type="button" onclick="Tour.start(true)" data-tour="help">Help</button>
   <button class="quiet menubtn" type="button" aria-expanded="false" aria-controls="topmenu" id="menubtn"
     onclick="omsMenu(!document.querySelector('header.top').classList.contains('open'), true)">☰ Menu</button>
@@ -171,7 +171,7 @@ function omsMenu(open, remember){
 <p class="src">Scheduled posts, writing due dates, marketing dates, order and custom-order deadlines, and the weekly and monthly passes.</p>
 
 <h2>Posts left today, by platform</h2>
-<p class="src">Counted from the Posts tab. Ceilings come from KIMI PROCEDURE 01 and your own rulings; each card names its source. A blank ceiling means no sourced number exists. Floor: one hour between posts to the same platform, 88 minutes preferred.
+<p class="src">Counted from the Posts tab. Ceilings come from the pacing rules and your own rulings; each card names its source. A blank ceiling means no sourced number exists. Floor: one hour between posts to the same platform, 88 minutes preferred.
 <form method="post" action="#" style="display:inline"><button class="quiet" style="padding:.1rem .6rem">Check the platforms now</button></form></p>
 <div class="pace" data-tour="pace">
 
