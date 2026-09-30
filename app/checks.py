@@ -188,9 +188,16 @@ def run(platform: str, draft: str, source: str, ai_written: bool = False,
                     "words": f"{n} of {lim} characters" if lim else f"{n} characters (no limit)"})
 
     nw = new_words(draft, source)
-    res.append({"name": "His words only", "ok": not nw,
-                "words": "Every word is from his source." if not nw else
-                "Not in his words: " + ", ".join(nw)})
+    if platform == "Etsy":
+        # the rule applies to descriptions of physical Etsy listings only
+        res.append({"name": "His words only", "ok": not nw,
+                    "words": "Every word is from his source." if not nw else
+                    "Not in his words: " + ", ".join(nw)})
+    else:
+        res.append({"name": "His words only", "ok": True, "warn": bool(nw),
+                    "words": "Not required here (only Etsy listing descriptions must be his words)."
+                    if not nw else "Not required here (only Etsy listing descriptions must be his words). "
+                    "Words not in his source are marked for you to see."})
 
     ids = ETSY_ID.findall(draft or "")
     live = live_listing_ids()
